@@ -1,0 +1,79 @@
+This game is mainly inspired from "Elite" and "Dope Wars". Game concepts come into the list below (they may not in consecutive order);
+	Main objective of the game is to get many scores as possible which come from the profit you got in the virtue of "Buy low, sell high". An object which not bought to sell didn't count (ex. You find an armor in the pathway and sell it in the trading post).
+	The things which you can buy and/or sell range from useless but valuable for trading (textiles, jewelry etc.), usable (foods, weapons, armors), and illegal such as narcotics and slaves. Some minerals like iron, mithril, orihalcum etc. can be used to improve different kinds of armors and weapons too.
+	Base Story - You lived in world which the pathways to different towns are constantly change. Everytime you start a new game the name and connection between towns are randomly generated.
+	Distance between towns : need food to cover these. No food, you perish.
+	Tax :
+    	Every year (state)
+    	Town :
+        	Entry (depending on the town characteristics, may be zeroed for outlaw town)
+        	On given shops
+        	Taxes have to be paid from teh merchant purse (not from bank)
+
+Maps
+* Tileset to be used: http://opengameart.org/content/16x16-dawnhack-roguelike-tileset
+•	Each town has a map (generated on first visit, saved afterwards)
+•	Between town : map also. Place for random encounters (depend on level), place for some treasure, gossips, NPC (go to XX deliver stuff – stuff takes place in merchant inventory)
+
+Town
+	When you are in the town the game change into menu console which you can buy/sell goods in trading post (it can trade anything even illegal items), improve weapons/armors, hire mercennaries in tavern, and buy and additional or upgrade your cargo holder (bags, carts, beast of burden, monster which can attack on its own etc.)
+	(In town) Sometime, you might hear some rumor about prices of good just like "Dope Wars".
+	In some town it may has extra paths which lead you to randomly generated but persistant (like in NetHack, ADOM, Crawl etc.) places where you can visit for items and artifacts (only this place which you might be muli-level dungeon).
+(In town) When you are ready, you can choose your path to another city which has many themes (ex. town A to town B path is forest theme) and have only two way to go; 1. Back to the town where you come from, 2.To the target town.
+	Status of the town have an effect on the price too (like Elite) ex. tranfering between agriculture town and industrial town often provide you a profit whatever the price is except very bad event happen like famine on agriculture town etc.
+•	Distance between town impacts food requirement.
+
+Town buildings :
+	Trading post : buy/sell goods (in the limit of the weight limit)
+	Bank : can deposit gold, and retrieve deposited gold. Present in 10% of the towns only. If no bank, then you cannot « save ». Money in bank is accrued.
+	Tavern : hear gossip (buildings in connected towns, links to dungeon, price of good), buy food
+	Mercenary’s guild : hire mercenary
+	Blacksmith : repair your equipment, buy bags, makes armor (fro your mecenaries only) out of own equipment
+	Stables : cure beast of burden, buy beast of burden, buy food for beast
+	Townhouse : Foudn a merchant company ?
+Main Guy
+	You are the merchant, not the fighter. You are encouraged to get a lot of money to improve your equipment (you can improve infinitely but more improve, more payments).
+	Well, at least you can use scrolls, wands, potions blah blah blah....
+	Race imapcts the mercenary you can hire (nothing else)
+	You can't level up. You don't have any magical spells and special abilities. OR : list of abilities (2 given by birth, no choice):
+	Haggle : sell%more, buy Y% less
+	Retired mercenary: get more mercenaries slot
+	Prude : don’t trade in slaves/narcotics/illegals
+	Extra strong : can carry more weight without carriers (usefull for beginning)
+	Assets : can travel with X% food less
+	….
+•	Level up ???
+•	Limit in terms of :
+o	Weight that he can carry (each object (even money) has some weight !
+o	Volume atht he can carry
+Equipment
+	The merceneries you can hire come into different races, classes, levels (they can be advance from experiences or meet them again for a long time in tavern), equipments (which you can buy or improve for them but risk for lost if they away from you), and payment for each time you move to other town (can be the same town if you retreat back :P). "Protect the cargo holder" (if you have) or "Protect me" are only two orders which you can use. Those mercenaries are randomly generated, spread all over the world, and move to different towns for sometime.
+	Death are permanent as in roguelike features. No any means of resurrection. OR lose 50% gold not in bank. IF no mean to buy food in next town : then permadeath.
+	Difficulty increased by the score you have and valuable of your goods. More valuable, stronger robbers are. Illegal items tend to draw the people who work for justice which are very strong.
+	Many things especially prices of the goods changing everytime you go to the new town (retreat back doesn't change anything).
+	The game has no ending. As the difficulty increase you will eventually die. An arcade-like spirit come from this statement.
+
+Merchant Company
+With some money you can found a merchant company. Gives you the ability to hire other merchants. They give you extra money, but may steal from you. You can specialize merchants for some goods.
+
+
+Ideas : Graph algo
+http://stackoverflow.com/questions/2041517/random-simple-connected-graph-generation-with-given-sparseness and https://gist.github.com/bwbaugh/4602818
+
+
+
+Steps :
+1-	Structure generation between town
+2-	Map generation inside town
+2b - special location inside town
+3-	Travel between town : map generation out
+4-	Player basic set of characteristics : gold, weight, food
+5-	Player movement in town, player movement between town
+6-	Buy and sell stuff
+7-	Random events systems
+8-	Shops & town equipments
+9-	Inventory : add bags, horse, carriage…
+10-	Mercenaries
+11-	Robbers & vermins
+12-	Taxes
+13- All with Graphics!
