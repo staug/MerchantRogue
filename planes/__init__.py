@@ -1224,3 +1224,6 @@ class ImagePlane(Plane):
 
     def sub(self):
         raise Exception("Cannot sub an image!")
+
+    def clicked(self, button_name):
+        print("click!")

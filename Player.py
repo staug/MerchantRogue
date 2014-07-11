@@ -5,6 +5,7 @@ import Util
 import const
 import pygame
 import os
+import math
 
 
 class DisplayableObject(object):
@@ -22,7 +23,6 @@ class DisplayableObject(object):
             self.set_graphical_surface(surface_to_draw, surface_memory)
 
         self.current_town.tile_map.map[self.position_on_tile].register_object(self)
-
 
     def set_graphical_representation(self, graphical_representation):
         if graphical_representation:
@@ -57,13 +57,14 @@ class DisplayableObject(object):
         self.current_town.tile_map.map[self.position_on_tile].call_action(player=self)
         return True
 
-    def move(self, x_tile_offset, y_tile_offset, ignore_tile_blocking=False, ignore_movable=False, ignore_message=False):
+    def move(self, x_tile_offset, y_tile_offset, ignore_tile_blocking=False,
+             ignore_movable=False, ignore_message=False):
         new_tile_position = (
             self.position_on_tile[0] + x_tile_offset,
             self.position_on_tile[1] + y_tile_offset
         )
-        return self.move_to(new_tile_position,
-                     ignore_tile_blocking=ignore_tile_blocking, ignore_movable=ignore_movable, ignore_message=ignore_message)
+        return self.move_to(new_tile_position, ignore_tile_blocking=ignore_tile_blocking,
+                            ignore_movable=ignore_movable, ignore_message=ignore_message)
 
 
 class SpriteObject(object):
@@ -98,7 +99,6 @@ class SpriteObject(object):
         self.surface_memory = surface_memory
 
 
-
 class AnimatedSpriteObject(SpriteObject):
     """
     An animated object
@@ -118,7 +118,8 @@ class AnimatedSpriteObject(SpriteObject):
 
 class Player(DisplayableObject):
 
-    def __init__(self, town, position_on_tile=(0,0), graphical_representation = None, surface_to_draw=None, surface_memory=None):
+    def __init__(self, town, position_on_tile=(0, 0), graphical_representation = None,
+                 surface_to_draw=None, surface_memory=None):
         super().__init__(town, movable=True, position_on_tile=position_on_tile,
                          graphical_representation=graphical_representation,
                          surface_to_draw=surface_to_draw, surface_memory=surface_memory)
@@ -140,6 +141,19 @@ class Player(DisplayableObject):
         m3 = Mercenary("A 3rd guy")
         self.mercenaries = [m1, m2, m3]
 
+        self.current_town.player_position = self.position_on_tile
+
+    def move(self, x_tile_offset, y_tile_offset,
+             ignore_tile_blocking=False, ignore_movable=False, ignore_message=False):
+        super().move(x_tile_offset, y_tile_offset, ignore_tile_blocking=ignore_tile_blocking,
+                     ignore_movable=ignore_movable, ignore_message=ignore_message)
+        self.current_town.player_position = self.position_on_tile
+
+    def move_to(self, new_tile_position, ignore_tile_blocking=False, ignore_movable=False, ignore_message=False):
+        super().move_to(new_tile_position, ignore_tile_blocking=ignore_tile_blocking,
+                        ignore_movable=ignore_movable, ignore_message=ignore_message)
+        self.current_town.player_position = self.position_on_tile
+
     def travel_to(self, other_town):
         self.current_town = other_town
 
@@ -152,12 +166,12 @@ class Player(DisplayableObject):
         self.wealth += money
 
     def store(self, good_quantity, container=None):
-        '''
+        """
         Store the good in the first available container...
         :param good_quantity: a tuple containing the good object and the quantity bought
         :return nothing
         :raise InventoryFull if there is no space left
-        '''
+        """
         for a_good in good_quantity:
             good = a_good[0]
             quantity = a_good[1]
@@ -183,13 +197,54 @@ class Player(DisplayableObject):
 
 class NonPlayableCharacter(DisplayableObject):
 
-    def __init__(self, town, position_on_tile=(0,0), graphical_representation = None, surface_to_draw=None, surface_memory=None):
+    def __init__(self, town, position_on_tile=(0,0),
+                 graphical_representation = None, surface_to_draw=None, surface_memory=None,
+                 default_action_list=None, action_when_player=None):
         super().__init__(town, movable=True, position_on_tile=position_on_tile,
                          graphical_representation=graphical_representation,
                          surface_to_draw=surface_to_draw, surface_memory=surface_memory)
+        if not default_action_list:
+            self.default_action_list=[self.get_close_to_player]
+        else:
+            self.default_action_list=default_action_list
+        if not action_when_player:
+            self.action_when_player=[self.speak_garbage]
+        else:
+            self.action_when_player=action_when_player
 
     def take_action(self):
-        self.move(random.randint(-1,1), random.randint(-1,1), ignore_message=True)
+        dx = self.current_town.player_position[0] - self.position_on_tile[0]
+        dy = self.current_town.player_position[1] - self.position_on_tile[1]
+        distance = math.sqrt(dx ** 2 + dy ** 2)
+        if distance < 2 and len(self.action_when_player) > 0:
+            random.choice(self.action_when_player)()
+        elif len(self.default_action_list) > 0:
+            random.choice(self.default_action_list)()
+        else:
+            self.wander()
+
+    def speak_garbage(self):
+        Util.Event("Hello player!")
+        self.action_when_player.remove(self.speak_garbage)
+        self.default_action_list.remove(self.get_close_to_player)
+
+
+    def wander(self):
+        self.move(random.randint(-1, 1), random.randint(-1, 1), ignore_message=True)
+
+    def get_close_to_player(self):
+        #vector from this object to the target, and distance
+        dx = self.current_town.player_position[0] - self.position_on_tile[0]
+        dy = self.current_town.player_position[1] - self.position_on_tile[1]
+        distance = math.sqrt(dx ** 2 + dy ** 2)
+
+        #normalize it to length 1 (preserving direction), then round it and
+        #convert to integer so the movement is restricted to the map grid
+        dx = int(round(dx / distance))
+        dy = int(round(dy / distance))
+        self.move(dx, dy, ignore_message=True)
+
+
 
 
 class InventoryObject(object):

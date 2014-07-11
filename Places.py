@@ -63,6 +63,7 @@ class Town(object):
         elif 6 < building_number:
             size = (80, 80)
         self.tile_map = TownTileMap(self, size, make_map=make_map, render_map=render_map)
+        self.player_position=(1,1)
 
     def __str__(self):
         return self.name
