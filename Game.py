@@ -30,17 +30,20 @@ if __name__ == '__main__':
     town_graph = Places.TownGraph([Places.Town(random.randint(2,5)) for x in range(num_town)])
     town = random.choice(town_graph.towns)
     town.build_tile_map()
-
+    print("Town correctly setup")
 
     main_image = planes.ImagePlane("Main Image", pygame.Rect((0, 0), (640,480)), image_size=town.tile_map.surface_memory.get_rect().size)
     main_image.image.blit(town.tile_map.surface_memory, (0,0))
     screen.sub(main_image)
     main_image.set_camera((640,480))
 
+    print("Screen fully initialized")
+
     player = Player.Player(town,
                            graphical_representation=Player.AnimatedSpriteObject(True, "Characters", "Player", (0, 0)),
                            surface_memory=town.tile_map.surface_memory, surface_to_draw=main_image.image
     )
+    print("Player ok")
 
     npc_list = []
     for i in range(5):
@@ -53,9 +56,7 @@ if __name__ == '__main__':
                            surface_memory=town.tile_map.surface_memory, surface_to_draw=main_image.image)
         npc_list.append(npc)
 
-
-    pygame.image.save(town.tile_map.surface_memory, "test.png")
-
+    print("NPC ok")
 
     print("starting main loop")
 

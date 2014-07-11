@@ -12,74 +12,30 @@ import pygame
 
 class Building(object):
 
-    def __init__(self):
-        self.decoration_list = []
+    def __init__(self, town):
+        self.decoration_list = {}
+        self.town = town
 
     def action_pane(self):
         pass
-
-
-class Gate(Building):
-
-    def __init__(self, owner):
-        self.name = owner.name + "'s gates"
-        self.owner = owner  # The town it belongs too
-
-    def action_pane(self):
-        # def end_action(*args):
-        #     for path in self.owner.available_paths:
-        #         if str(path) == args[0].text:
-        #             player.move_to(path.destination_town)
-        #
-        # return planes.gui.tmb.TMBOptionSelector("Destination", [str(path) for path in self.owner.available_paths], end_action)
-        pass
-
-
-class Title(Building):
-
-    def __init__(self, owner):
-        self.name = owner.name
-        self.owner = owner
-
-    def action_pane(self):
-        pass
-        #return planes.gui.Label(self.name, self.name, pygame.Rect(200,200,100,20))
 
 
 class TradingPost(Building):
 
-    def __init__(self, owner):
-        self.name = owner.name
-        self.owner = owner
+    def __init__(self, town):
+        super().__init__(town)
+
         self.gold = random.randint(1, 200)
         self.goods_available = [Player.GameObject(Util.MName().new()) for x in range(random.randint(1, 5))]
 
+        self.decoration_list = {
+            "1x1": [("Decor", True, (0, 64)), ("Decor", True, (16, 64)), ("Decor", True, (32, 64)),
+                    ("Decor", True, (0, 112)), ("Decor", True, (16, 112), (16, 128)), ("Decor", True, (32, 112))],
+            "1x3": [("Decor", True, (0, 160))]
+        }
+
     def action_pane(self):
         pass
-        # price_modifiers = {}
-        # for good in self.goods_available:
-        #     price_modifiers[good.name] = random.randint(-15, 15)
-        # for good_name in player.inventory_list[0].contains.keys():
-        #     price_modifiers[good_name] = random.randint(-15, 15)
-        #
-        # def buy_action(*args):
-        #     for good in args[0]:
-        #         good_quantity = good[1]
-        #         good_object = good[0]
-        #         unit_value = good_object.regular_value + price_modifiers[good_object.name]
-        #         print("{} times the following: {} at {}".format(good[1], good[0], unit_value))
-        #
-        #     player.buy(args[0])
-        #
-        # def sell_action(*args):
-        #     pass
-        #
-        # #return planes.gui.tmb.TMBOptionSelector("Sell", self.good_to_sell, end_action)
-        # main_container = planes.gui.Container("sell_buy")
-        # main_container.sub(GuiElements.TradePlane("Buy","Buy", self.goods_available, buy_action, price_modifier = price_modifiers))
-        # main_container.sub(GuiElements.TradePlane("Sell","Sell",
-        #                                           [x[0] for x in player.inventory_list[0].contains.values()], sell_action, price_modifier = price_modifiers, quantity=[x[1] for x in player.inventory_list[0].contains.values()]))
-        # return main_container
 
 
 class Town(object):
@@ -99,13 +55,14 @@ class Town(object):
     def __init__(self, building_number, make_map=False, render_map=False):
         self.name = Util.MName().new()
         self.available_paths = []
-        self.buildings = {"Gate":Gate(self), "Title":Title(self), "Trading Post":TradingPost(self)}
+        #self.buildings = {"Gate":Gate(self), "Title":Title(self), "Trading Post":TradingPost(self)}
+        self.buildings = [TradingPost(self), TradingPost(self)]
         size = (50, 50)
         if 4 < building_number <= 6:
             size = (65, 65)
         elif 6 < building_number:
             size = (80, 80)
-        self.tile_map = TownTileMap(size, building_number, make_map=make_map, render_map=render_map)
+        self.tile_map = TownTileMap(self, size, make_map=make_map, render_map=render_map)
 
     def __str__(self):
         return self.name
@@ -119,7 +76,7 @@ class Town(object):
             size = (65, 65)
         elif 6 < len(self.buildings):
             size = (80, 80)
-        self.tile_map = TownTileMap(size, len(self.buildings), make_map=True, render_map=True)
+        self.tile_map = TownTileMap(self, size, make_map=True, render_map=True)
 
 
 class Path(object):
@@ -262,6 +219,7 @@ class Tile(object):
         self.position = position
         self.tile_map_owner = tile_map_owner
         self.object_on_tile = []
+        self.decoration_blocking = False
 
     def call_action(self, **kwargs):
         if self.specific_action_callback:
@@ -285,7 +243,7 @@ class Tile(object):
 
     @property
     def blocking(self):
-        return self.floor_type in (Tile.WATER, Tile.WALL, Tile.ROCK) or len(self.object_on_tile)
+        return self.floor_type in (Tile.WATER, Tile.WALL, Tile.ROCK) or len(self.object_on_tile) or self.decoration_blocking
 
 
 class TileMap(object):
@@ -327,10 +285,11 @@ class TileMap(object):
 
 class TownTileMap(TileMap):
 
-    def __init__(self, size, nb_rooms, make_map=False, render_map=False):
+    def __init__(self, town, size, make_map=False, render_map=False):
         super().__init__(size, make_map=False, render_map=False)
 
-        self.nb_rooms = nb_rooms
+        self.town = town
+        self.rooms = town.buildings
         self.surface_memory = None
 
         if make_map or render_map:
@@ -398,9 +357,10 @@ class TownTileMap(TileMap):
 
         class Room(object):
 
-            def __init__(self, width, height, top_x, top_y):
+            def __init__(self, width, height, top_x, top_y, building):
                 self.places = []
                 self.doors = []
+                self.building = building
                 for x_coord in range(top_x, width + top_x):
                     for y_coord in range(top_y, height + top_y):
                         self.places.append((x_coord, y_coord))
@@ -445,6 +405,7 @@ class TownTileMap(TileMap):
             def carve(self, tile_map, max_x, max_y):
                 for place in self.places:
                     tile_map[place].floor_type = Tile.FLOOR
+                    tile_map[place].room = self.building
                 for place in self.places:
                     if self.compute_tile_weight(place[0], place[1], (Tile.FLOOR, Tile.WALL),
                                                 tile_map, max_x, max_y) != 15:
@@ -466,6 +427,15 @@ class TownTileMap(TileMap):
                         self.doors.append(place)
                         nb_placed += 1
 
+            def add_deco(self, tile_map):
+                #TODO: make sure it is not closed to the door
+                for i in range(10):
+                    place = random.choice(self.places)
+                    if tile_map[place].floor_type == Tile.FLOOR and not tile_map[place].decoration_type:
+                        tile_map[place].decoration_type = random.choice(self.building.decoration_list["1x1"])
+                        if tile_map[place].decoration_type[1]:
+                            tile_map[place].decoration_blocking = True
+
         need_rebuild = True
 
         while need_rebuild:
@@ -482,11 +452,12 @@ class TownTileMap(TileMap):
             room_placed = []
             trials = 0
             print("Placing rooms")
-            while len(room_placed) < self.nb_rooms and trials < 100:
+            while len(room_placed) < len(self.rooms) and trials < 100:
                 a_room = Room(10 + random.randint(-3, 1),
                               10 + random.randint(-3, 1),
                               random.randint(self.max_x // 5, self.max_x - self.max_x // 5),
-                              random.randint(self.max_y // 5, self.max_y - self.max_y // 5))
+                              random.randint(self.max_y // 5, self.max_y - self.max_y // 5),
+                              self.rooms[len(room_placed)])
                 if a_room.can_place(self.map):
                     a_room.carve(self.map, self.max_x, self.max_y)
                     a_room.place_door(self.map, self.max_x, self.max_y)
@@ -518,7 +489,10 @@ class TownTileMap(TileMap):
                             ):
                                 self.map[(n.location.x, n.location.y)].floor_type = Tile.PATH
 
-        # finish building it - Now redecorating
+
+            # finish building it - Now redecorating
+            for room in room_placed:
+                room.add_deco(self.map)
 
     def render(self):
 
@@ -617,3 +591,7 @@ class TownTileMap(TileMap):
                             else:
                                 self.surface_memory.blit(door_closed_source_file.subsurface(pygame.Rect((16,0), (16,16))),
                                                  (x * Tile.TILE_SIZE, y * Tile.TILE_SIZE))
+                        else:
+                            Player.DisplayableObject(self.town, movable=False, position_on_tile=(x,y),
+                                                     graphical_representation=Player.AnimatedSpriteObject(False, "Objects", self.map[(x, y)].decoration_type[0], self.map[(x, y)].decoration_type[2]),
+                                                     surface_to_draw=self.surface_memory, surface_memory=self.surface_memory).draw()
