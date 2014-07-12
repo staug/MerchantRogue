@@ -74,7 +74,10 @@ class SpriteObject(object):
     def __init__(self, movable, animation_folder, animation_file, animation_coordinates_in_file,
                  surface_to_draw=None, surface_memory=None):
         if animation_file:
-            self.animation = Util.PygAnimation([(const.IMAGE_RESOURCE_FOLDER + animation_folder + os.sep + animation_file + ".png", animation_coordinates_in_file, 1.0)])
+            self.animation = Util.PygAnimation(
+                [(const.IMAGE_RESOURCE_FOLDER + animation_folder + os.sep +
+                  animation_file + ".png", animation_coordinates_in_file, 1.0)]
+            )
         self.movable = movable
         self.owner = None
 
@@ -197,20 +200,20 @@ class Player(DisplayableObject):
 
 class NonPlayableCharacter(DisplayableObject):
 
-    def __init__(self, town, position_on_tile=(0,0),
+    def __init__(self, town, position_on_tile=(0, 0),
                  graphical_representation = None, surface_to_draw=None, surface_memory=None,
                  default_action_list=None, action_when_player=None):
         super().__init__(town, movable=True, position_on_tile=position_on_tile,
                          graphical_representation=graphical_representation,
                          surface_to_draw=surface_to_draw, surface_memory=surface_memory)
         if not default_action_list:
-            self.default_action_list=[self.get_close_to_player]
+            self.default_action_list = [self.get_close_to_player]
         else:
-            self.default_action_list=default_action_list
+            self.default_action_list = default_action_list
         if not action_when_player:
-            self.action_when_player=[self.speak_garbage]
+            self.action_when_player = [self.speak_garbage]
         else:
-            self.action_when_player=action_when_player
+            self.action_when_player = action_when_player
 
     def take_action(self):
         dx = self.current_town.player_position[0] - self.position_on_tile[0]
@@ -228,7 +231,6 @@ class NonPlayableCharacter(DisplayableObject):
         self.action_when_player.remove(self.speak_garbage)
         self.default_action_list.remove(self.get_close_to_player)
 
-
     def wander(self):
         self.move(random.randint(-1, 1), random.randint(-1, 1), ignore_message=True)
 
@@ -244,7 +246,24 @@ class NonPlayableCharacter(DisplayableObject):
         dy = int(round(dy / distance))
         self.move(dx, dy, ignore_message=True)
 
+    def stay_in_room(self):
+        old_building = self.current_town.tile_map.map[self.position_on_tile].room
+        old_position = self.position_on_tile
+        self.wander()
+        if not old_building or self.current_town.tile_map.map[self.position_on_tile].room != old_building:
+            self.move_to(old_position, ignore_message=True)
 
+
+class TraderNPC(NonPlayableCharacter):
+
+    def trade_with_player(self):
+        pass
+
+    def __init__(self, town, position_on_tile=(0,0),
+                 graphical_representation = None, surface_to_draw=None, surface_memory=None):
+        super().__init__(town, position_on_tile=position_on_tile, graphical_representation=graphical_representation,
+                     surface_to_draw=surface_to_draw, surface_memory=surface_memory,
+                     default_action_list=[self.stay_in_room], action_when_player=[self.trade_with_player])
 
 
 class InventoryObject(object):
@@ -290,7 +309,7 @@ class InventoryObject(object):
                 if not keep_in:
                     self.remove(str(object_quantity[InventoryObject.OBJECT_SLOT]),
                                 object_quantity[InventoryObject.QUANTITY_SLOT])
-        except InventoryObject.InventoryFull as e:
+        except InventoryObject.InventoryFull:
             raise InventoryObject.InventoryFull("Only {} free slots remaining".format(other_inventory_object.free_slots))
 
     def can_store(self, quantity):
@@ -339,7 +358,6 @@ class GameObject(object):
 
     def __str__(self):
         return self.name
-
 
 
 class Mercenary(object):

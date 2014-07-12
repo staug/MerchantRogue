@@ -41,8 +41,10 @@ if __name__ == '__main__':
 
     player = Player.Player(town,
                            graphical_representation=Player.AnimatedSpriteObject(True, "Characters", "Player", (0, 0)),
+                           position_on_tile=town.tile_map.default_start_player_position,
                            surface_memory=town.tile_map.surface_memory, surface_to_draw=main_image.image
     )
+    main_image.move_camera_tile_center(player.position_on_tile)
     print("Player ok")
 
     npc_list = []
@@ -50,8 +52,8 @@ if __name__ == '__main__':
         image_coordinate_x = [x*16 for x in range(0, 7)]
         image_coordinate_y = [y*16 for y in (3, 4, 7, 8)]
         coordinates = (random.choice(image_coordinate_x), random.choice(image_coordinate_y))
-        npc = Player.NonPlayableCharacter(town,
-                            position_on_tile=random.choice(list(town.tile_map.map.keys())),
+        npc = Player.TraderNPC(town,
+                            position_on_tile=town.tile_map.get_place_in_building(Places.Building.TRADING_POST),
                            graphical_representation=Player.AnimatedSpriteObject(True, "Characters", "Player", coordinates),
                            surface_memory=town.tile_map.surface_memory, surface_to_draw=main_image.image)
         npc_list.append(npc)

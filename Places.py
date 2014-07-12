@@ -12,9 +12,20 @@ import pygame
 
 class Building(object):
 
+    UNKNOWN = "unknown"
+    GATE = "gate"
+    TRADING_POST = "trading_post"
+    BANK = "bank"
+    TAVERN = "tavern"
+    MERCENARY_GUILD = "mercenary_guild"
+    BLACKSMITH = "blacksmith"
+    STABLES = "stables"
+    TOWNHOUSE = "townhouse"
+
     def __init__(self, town):
         self.decoration_list = {}
         self.town = town
+        self.name = Building.UNKNOWN
 
     def action_pane(self):
         pass
@@ -24,6 +35,7 @@ class TradingPost(Building):
 
     def __init__(self, town):
         super().__init__(town)
+        self.name = Building.TRADING_POST
 
         self.gold = random.randint(1, 200)
         self.goods_available = [Player.GameObject(Util.MName().new()) for x in range(random.randint(1, 5))]
@@ -43,15 +55,6 @@ class Town(object):
     A Town is the main place of the game. A town hosts buildings.
     """
 
-    GATE = "gate"
-    TRADING_POST = "trading_post"
-    BANK = "bank"
-    TAVERN = "tavern"
-    MERCENARY_GUILD = "mercenary_guild"
-    BLACKSMITH = "blacksmith"
-    STABLES = "stables"
-    TOWNHOUSE = "townhouse"
-
     def __init__(self, building_number, make_map=False, render_map=False):
         self.name = Util.MName().new()
         self.available_paths = []
@@ -63,7 +66,7 @@ class Town(object):
         elif 6 < building_number:
             size = (80, 80)
         self.tile_map = TownTileMap(self, size, make_map=make_map, render_map=render_map)
-        self.player_position=(1,1)
+        self.player_position=(1, 1)
 
     def __str__(self):
         return self.name
@@ -171,6 +174,7 @@ def test_message(**kwargs):
     Util.Event("Wowwww")
     print("Test2")
 
+
 def door_closed(**kwargs):
     if kwargs["tile"].characteristics["closed"] == "true":
         Util.Event("This door is closed")
@@ -194,7 +198,7 @@ def door_closed(**kwargs):
                                  (x * Tile.TILE_SIZE, y * Tile.TILE_SIZE))
 
     Util.Event("This door is now open")
-    #return kwargs["tile"]
+
 
 class Tile(object):
 
@@ -210,7 +214,8 @@ class Tile(object):
 
     TILE_SIZE = 16
 
-    def __init__(self, position, floor_type, tile_map_owner, specific_action_callback=None, specific_action_around_callback=None, decoration_type=None):
+    def __init__(self, position, floor_type, tile_map_owner,
+                 specific_action_callback=None, specific_action_around_callback=None, decoration_type=None):
         self.floor_type = floor_type
         self.specific_action_callback = specific_action_callback
         self.specific_action_around_callback = specific_action_around_callback
@@ -244,7 +249,8 @@ class Tile(object):
 
     @property
     def blocking(self):
-        return self.floor_type in (Tile.WATER, Tile.WALL, Tile.ROCK) or len(self.object_on_tile) or self.decoration_blocking
+        return self.floor_type in (Tile.WATER, Tile.WALL, Tile.ROCK) \
+               or len(self.object_on_tile) or self.decoration_blocking
 
 
 class TileMap(object):
@@ -290,13 +296,26 @@ class TownTileMap(TileMap):
         super().__init__(size, make_map=False, render_map=False)
 
         self.town = town
-        self.rooms = town.buildings
         self.surface_memory = None
+        self.rooms = []
+        self.default_start_player_position = (0, 0)
 
         if make_map or render_map:
             self.make_map()
         if render_map:
             self.render()
+
+    def get_place_in_building(self, building_name):
+        default = (0, 0)
+        for room in self.rooms:
+            if room.building.name == building_name:
+                for trials in range (100):
+                    place = random.choice(room.places)
+                    if self.map[place].floor_type == Tile.FLOOR and not self.map[place].blocking:
+                        return place
+                return default
+        print("Warning: room type not found!!")
+        return default
 
     def make_map(self):
 
@@ -428,11 +447,11 @@ class TownTileMap(TileMap):
                         self.doors.append(place)
                         nb_placed += 1
 
-            def add_deco(self, tile_map):
-                #TODO: make sure it is not closed to the door
+            def add_deco(self, tile_map, max_x, max_y):
                 for i in range(10):
                     place = random.choice(self.places)
-                    if tile_map[place].floor_type == Tile.FLOOR and not tile_map[place].decoration_type:
+                    weight = self.compute_tile_weight(place[0], place[1], (Tile.FLOOR), tile_map, max_x, max_y)
+                    if tile_map[place].floor_type == Tile.FLOOR and not tile_map[place].decoration_type and weight == 15:
                         tile_map[place].decoration_type = random.choice(self.building.decoration_list["1x1"])
                         if tile_map[place].decoration_type[1]:
                             tile_map[place].decoration_blocking = True
@@ -453,12 +472,12 @@ class TownTileMap(TileMap):
             room_placed = []
             trials = 0
             print("Placing rooms")
-            while len(room_placed) < len(self.rooms) and trials < 100:
+            while len(room_placed) < len(self.town.buildings) and trials < 100:
                 a_room = Room(10 + random.randint(-3, 1),
                               10 + random.randint(-3, 1),
                               random.randint(self.max_x // 5, self.max_x - self.max_x // 5),
                               random.randint(self.max_y // 5, self.max_y - self.max_y // 5),
-                              self.rooms[len(room_placed)])
+                              self.town.buildings[len(room_placed)])
                 if a_room.can_place(self.map):
                     a_room.carve(self.map, self.max_x, self.max_y)
                     a_room.place_door(self.map, self.max_x, self.max_y)
@@ -466,7 +485,7 @@ class TownTileMap(TileMap):
                 trials += 1
 
             if trials >= 100:
-                print("Unable to place town in the allocated time - Regenarating")
+                print("Unable to place town in the allocated time - Regenerating")
             else:
                 # Successfully placed all the rooms
                 need_rebuild = False
@@ -484,16 +503,23 @@ class TownTileMap(TileMap):
                         print("One path not made... Regenerating".format(trials))
                         need_rebuild = True
                     else:
+                        possible_starts = []
                         for n in p.nodes:
                             if self.map[(n.location.x, n.location.y)].floor_type not in (
                                     Tile.FLOOR, Tile.DOOR, Tile.PATH
                             ):
                                 self.map[(n.location.x, n.location.y)].floor_type = Tile.PATH
+                                possible_starts.append((n.location.x, n.location.y))
+                        if len(possible_starts) > 0:
+                            self.default_start_player_position = random.choice(possible_starts)
 
 
             # finish building it - Now redecorating
             for room in room_placed:
-                room.add_deco(self.map)
+                room.add_deco(self.map, self.max_x, self.max_y)
+            # and adding the room to the official list of room
+            for room in room_placed:
+                self.rooms.append(room)
 
     def render(self):
 
