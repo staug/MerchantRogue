@@ -70,8 +70,6 @@ class Town(object):
         self.tile_map = TownTileMap(self, size, make_map=make_map, render_map=render_map)
         self.player_position=(1, 1)
 
-        # TODO: Add some random objects in there...
-
     def __str__(self):
         return self.name
 

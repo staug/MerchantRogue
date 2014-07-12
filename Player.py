@@ -179,21 +179,20 @@ class Player(DisplayableObject):
         :return nothing
         :raise InventoryFull if there is no space left
         """
-        for a_good in good_quantity:
-            good = a_good[0]
-            quantity = a_good[1]
-            store = False
-            if container:
-                if container.can_store(quantity):
+        quantity = good_quantity[1]
+        good = good_quantity[0]
+        store = False
+        if container:
+            if container.can_store(quantity):
+                container.store(good, quantity)
+                store = True
+        else:
+            for container in self.inventory_list:
+                if not store and container.can_store(quantity):
                     container.store(good, quantity)
                     store = True
-            else:
-                for container in self.inventory_list:
-                    if not store and container.can_store(quantity):
-                        container.store(good, quantity)
-                        store = True
-            if not store:
-                raise InventoryObject.InventoryFull("{} cannot be stored".format(str(good)))
+        if not store:
+            raise InventoryObject.InventoryFull("{} cannot be stored".format(str(good)))
 
     def hire(self, mercenary):
         self.mercenaries.append(mercenary)
@@ -212,6 +211,7 @@ class Player(DisplayableObject):
             return
         try:
             self.store((game_object, 1))
+            self.current_town.game_object_list.remove(game_object)
         except InventoryObject.InventoryFull as e:
             Util.Event(e.message)
 

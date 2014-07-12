@@ -4,7 +4,6 @@ import planes
 import planes.gui
 import planes.gui.tmb
 import random
-import Util
 import Places
 import Player
 import pygame
@@ -58,7 +57,12 @@ if __name__ == '__main__':
         town.npc_list.append(npc)
 
     print("NPC ok")
-
+    for i in range(25):
+        an_object = Player.GameObject("A leftover object", town, position_on_tile=(random.randint(0, town.tile_map.max_x - 1), random.randint(0, town.tile_map.max_y - 1)),
+                                      graphical_representation = Player.AnimatedSpriteObject(True, "Objects", "Ground", (48, 16)),
+                    surface_to_draw = main_image.image, surface_memory = town.tile_map.surface_memory, delayed_register=True)
+        town.game_object_list.append(an_object)
+    print("Game object ok")
     print("starting main loop")
 
     #test2 = planes.gui.tmb.TMBOptionSelector("Destination", ["A", "B"], bing)
@@ -81,26 +85,18 @@ if __name__ == '__main__':
             if event.type == const.DEBUG_EVENT:
                 print(event.message)
             if event.type == KEYDOWN and event.key == K_RIGHT:
-                # main_image.image.blit(tm.surface_memory, (pos_x, pos_y), pygame.Rect((pos_x, pos_y), (16, 16)))
-                # pos_x += 16
                 player.move(1, 0)
                 player_took_action = True
                 main_image.move_camera_tile_center(player.position_on_tile)
             if event.type == KEYDOWN and event.key == K_UP:
-                # main_image.image.blit(tm.surface_memory, (pos_x, pos_y), pygame.Rect((pos_x, pos_y), (16, 16)))
-                # pos_y -= 16
                 player.move(0, -1)
                 player_took_action = True
                 main_image.move_camera_tile_center(player.position_on_tile)
             if event.type == KEYDOWN and event.key == K_DOWN:
-                # main_image.image.blit(tm.surface_memory, (pos_x, pos_y), pygame.Rect((pos_x, pos_y), (16, 16)))
-                # pos_y += 16
                 player.move(0, 1)
                 player_took_action = True
                 main_image.move_camera_tile_center(player.position_on_tile)
             if event.type == KEYDOWN and event.key == K_LEFT:
-                # main_image.image.blit(tm.surface_memory, (pos_x, pos_y), pygame.Rect((pos_x, pos_y), (16, 16)))
-                # pos_x -= 16
                 player.move(-1, 0)
                 player_took_action = True
                 main_image.move_camera_tile_center(player.position_on_tile)
