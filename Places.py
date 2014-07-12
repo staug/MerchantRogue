@@ -38,7 +38,7 @@ class TradingPost(Building):
         self.name = Building.TRADING_POST
 
         self.gold = random.randint(1, 200)
-        self.goods_available = [Player.GameObject(Util.MName().new()) for x in range(random.randint(1, 5))]
+        self.goods_available = [Player.GameObject(Util.MName().new(), town, delayed_register=True) for x in range(random.randint(1, 5))]
 
         self.decoration_list = {
             "1x1": [("Decor", True, (0, 64)), ("Decor", True, (16, 64)), ("Decor", True, (32, 64)),
@@ -52,11 +52,13 @@ class TradingPost(Building):
 
 class Town(object):
     """
-    A Town is the main place of the game. A town hosts buildings.
+    A Town is the main place of the game. A town hosts buildings, hosts NPCs, hosts gameobjects.
     """
 
     def __init__(self, building_number, make_map=False, render_map=False):
         self.name = Util.MName().new()
+        self.npc_list = []
+        self.game_object_list = []
         self.available_paths = []
         #self.buildings = {"Gate":Gate(self), "Title":Title(self), "Trading Post":TradingPost(self)}
         self.buildings = [TradingPost(self), TradingPost(self)]
@@ -67,6 +69,8 @@ class Town(object):
             size = (80, 80)
         self.tile_map = TownTileMap(self, size, make_map=make_map, render_map=render_map)
         self.player_position=(1, 1)
+
+        # TODO: Add some random objects in there...
 
     def __str__(self):
         return self.name

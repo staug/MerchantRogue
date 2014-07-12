@@ -47,7 +47,6 @@ if __name__ == '__main__':
     main_image.move_camera_tile_center(player.position_on_tile)
     print("Player ok")
 
-    npc_list = []
     for i in range(2):
         image_coordinate_x = [x*16 for x in range(0, 7)]
         image_coordinate_y = [y*16 for y in (3, 4, 7, 8)]
@@ -56,7 +55,7 @@ if __name__ == '__main__':
                             position_on_tile=town.tile_map.get_place_in_building(Places.Building.TRADING_POST),
                            graphical_representation=Player.AnimatedSpriteObject(True, "Characters", "Player", coordinates),
                            surface_memory=town.tile_map.surface_memory, surface_to_draw=main_image.image)
-        npc_list.append(npc)
+        town.npc_list.append(npc)
 
     print("NPC ok")
 
@@ -105,6 +104,9 @@ if __name__ == '__main__':
                 player.move(-1, 0)
                 player_took_action = True
                 main_image.move_camera_tile_center(player.position_on_tile)
+            if event.type == KEYDOWN and event.key == K_p:
+                player.pickup()
+                player_took_action = True
             if event.type == KEYDOWN and event.key == K_t:
                 main_image.move_camera(y=-1)
             if event.type == KEYDOWN and event.key == K_g:
@@ -115,11 +117,15 @@ if __name__ == '__main__':
                 main_image.move_camera(x=1)
 
         if player_took_action:
-            for npc in npc_list:
+            for npc in town.npc_list:
                 npc.take_action()
 
-        for npc in npc_list:
+        for npc in town.npc_list:
             npc.draw()
+
+        for game_object in town.game_object_list:
+            game_object.draw()
+
         player.draw()
 
         # test_anim.blit(main_image.image, (pos_x, pos_y))

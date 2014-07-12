@@ -11,7 +11,7 @@ import math
 class DisplayableObject(object):
 
     def __init__(self, current_town, movable=True, position_on_tile=(0, 0),
-                 graphical_representation = None, surface_to_draw = None, surface_memory = None):
+                 graphical_representation = None, surface_to_draw = None, surface_memory = None, delayed_register=False):
         self.current_town = current_town
         self.position_on_tile = position_on_tile
         self.movable = movable
@@ -22,6 +22,10 @@ class DisplayableObject(object):
         if surface_memory and surface_to_draw:
             self.set_graphical_surface(surface_to_draw, surface_memory)
 
+        if not delayed_register:
+            self.register_object()
+
+    def register_object(self):
         self.current_town.tile_map.map[self.position_on_tile].register_object(self)
 
     def set_graphical_representation(self, graphical_representation):
@@ -131,11 +135,11 @@ class Player(DisplayableObject):
 
         # TEST
         body = InventoryObject("Own body", slots=10)
-        body.store(GameObject("A Stuff"), 2)
-        body.store(GameObject("Another Stuff"), 3)
+        #body.store(GameObject("A Stuff"), 2)
+        #body.store(GameObject("Another Stuff"), 3)
 
         bag = UnlimitedInventory("A bag", slots=15, container_weight=3)
-        bag.store(GameObject("A Stuff"), 5)
+        #bag.store(GameObject("A Stuff"), 5)
         # END TEST
         self.inventory_list = [body, bag]
 
@@ -196,6 +200,20 @@ class Player(DisplayableObject):
 
     def fire(self, mercenary):
         self.mercenaries.remove(mercenary)
+
+    def pickup(self):
+        game_object = None
+        for an_object in self.current_town.game_object_list:
+            if an_object.position_on_tile == self.position_on_tile:
+                game_object = an_object
+                break
+        if not game_object:
+            Util.Event("There is nothing there!")
+            return
+        try:
+            self.store((game_object, 1))
+        except InventoryObject.InventoryFull as e:
+            Util.Event(e.message)
 
 
 class NonPlayableCharacter(DisplayableObject):
@@ -258,11 +276,12 @@ class TraderNPC(NonPlayableCharacter):
 
     def trade_with_player(self):
         building = self.current_town.tile_map.map[self.position_on_tile].room
+        message = ""
         if building and building.goods_available:
-            Util.Event("Available: {}".format([str(game_object.name) for game_object in building.goods_available]))
+            message += "Available: {}".format([str(game_object.name) for game_object in building.goods_available])
         if building and building.gold:
-            Util.Event("Gold available: {}".format(building.gold))
-        pass
+            message += "\n Gold available: {}".format(building.gold)
+        Util.Event(message)
 
     def __init__(self, town, position_on_tile=(0,0),
                  graphical_representation = None, surface_to_draw=None, surface_memory=None):
@@ -354,12 +373,27 @@ class UnlimitedInventory(InventoryObject):
         return self.slots
 
 
-class GameObject(object):
+class GameObject(DisplayableObject):
 
-    def __init__(self, name):
+    """
+    A Game object can be displayed on screen, picked up in inventory and later removed
+    A Game object can also be a trap
+    """
+
+    def __init__(self, name, town, position_on_tile=(0, 0),
+                 graphical_representation = None, surface_to_draw = None, surface_memory = None, action_when_player=None, delayed_register=False):
+        super().__init__(town, movable=False, position_on_tile=position_on_tile, graphical_representation=graphical_representation,surface_to_draw=surface_to_draw, surface_memory = surface_memory, delayed_register=delayed_register)
+
         self.name = name
         self.weight = random.randint(1, 10)
         self.regular_value = random.randint(1, 100)
+        if action_when_player:
+            self.action_when_player = action_when_player
+        else:
+            self.action_when_player = [self.pickup]
+
+    def pickup(self):
+        pass
 
     def __str__(self):
         return self.name
