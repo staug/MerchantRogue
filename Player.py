@@ -257,6 +257,11 @@ class NonPlayableCharacter(DisplayableObject):
 class TraderNPC(NonPlayableCharacter):
 
     def trade_with_player(self):
+        building = self.current_town.tile_map.map[self.position_on_tile].room
+        if building and building.goods_available:
+            Util.Event("Available: {}".format([str(game_object.name) for game_object in building.goods_available]))
+        if building and building.gold:
+            Util.Event("Gold available: {}".format(building.gold))
         pass
 
     def __init__(self, town, position_on_tile=(0,0),
@@ -264,7 +269,7 @@ class TraderNPC(NonPlayableCharacter):
         super().__init__(town, position_on_tile=position_on_tile, graphical_representation=graphical_representation,
                      surface_to_draw=surface_to_draw, surface_memory=surface_memory,
                      default_action_list=[self.stay_in_room], action_when_player=[self.trade_with_player])
-
+        self.friendliness_setting = random.randint(-10, 10)
 
 class InventoryObject(object):
 

@@ -48,7 +48,7 @@ if __name__ == '__main__':
     print("Player ok")
 
     npc_list = []
-    for i in range(5):
+    for i in range(2):
         image_coordinate_x = [x*16 for x in range(0, 7)]
         image_coordinate_y = [y*16 for y in (3, 4, 7, 8)]
         coordinates = (random.choice(image_coordinate_x), random.choice(image_coordinate_y))
@@ -75,6 +75,11 @@ if __name__ == '__main__':
                 print("got pygame.QUIT, terminating")
                 raise SystemExit
             if event.type == const.DISPLAY_EVENT:
+                print(event.message)
+                event_box = planes.gui.OutlinedText("Event", event.message)
+                screen.sub(event_box)
+                event_box.rect.top = 100
+            if event.type == const.DEBUG_EVENT:
                 print(event.message)
             if event.type == KEYDOWN and event.key == K_RIGHT:
                 # main_image.image.blit(tm.surface_memory, (pos_x, pos_y), pygame.Rect((pos_x, pos_y), (16, 16)))
