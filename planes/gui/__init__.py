@@ -515,6 +515,8 @@ class OutlinedText(Label):
 
         return
 
+
+
 class Button(Label):
     """A planes plane which displays a text and reacts on mouse clicks.
 
@@ -1490,4 +1492,23 @@ class ProgressBar(planes.Plane):
         #
         self.last_image_id = None
 
+        return
+
+
+class MultiLinesOutlinedText(Container):
+    """A multi line outlined text.
+    """
+
+    def __init__(self, message, text_color=(255,255,255), font=None):
+        """Initialise.
+        """
+
+        # Base class __init__()
+        # We need a unique random name an just use this instance's id.
+        Container.__init__(self, str(id(self)), padding = 5)
+
+        lines = message.split("\n")
+
+        for line_no in range(len(lines)):
+            self.sub(OutlinedText("message_line_{0}".format(line_no), lines[line_no]))
         return

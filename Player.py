@@ -134,11 +134,11 @@ class Player(DisplayableObject):
         self.wealth = 0
 
         # TEST
-        body = InventoryObject("Own body", slots=10)
+        body = InventoryObject("Own body", slots=5)
         #body.store(GameObject("A Stuff"), 2)
         #body.store(GameObject("Another Stuff"), 3)
 
-        bag = UnlimitedInventory("A bag", slots=15, container_weight=3)
+        bag = InventoryObject("A bag", slots=2, container_weight=3)
         #bag.store(GameObject("A Stuff"), 5)
         # END TEST
         self.inventory_list = [body, bag]
@@ -171,6 +171,12 @@ class Player(DisplayableObject):
 
     def sell(self, money):
         self.wealth += money
+
+    def list_container(self):
+        result = ""
+        for container in self.inventory_list:
+            result += str(container)
+        return result
 
     def store(self, good_quantity, container=None):
         """
@@ -296,10 +302,18 @@ class InventoryObject(object):
     OBJECT_SLOT = 0
 
     class InventoryFull(Exception):
-        pass
+        def __init__(self, message=None, error=None):
+            if not message:
+                message = "This object cannot store more things"
+            super().__init__(self, message)
+            self.message = message
 
     class ObjectNotFound(Exception):
-        pass
+        def __init__(self, message=None, error=None):
+            if not message:
+                message = "This object is not part of this container"
+            super().__init__(self, message)
+            self.message = message
 
     def __init__(self, name, slots=-1, container_weight=0):
         self.name = name
@@ -341,6 +355,18 @@ class InventoryObject(object):
             return True
         else:
             return False
+
+    def __str__(self):
+        '''
+        String representation of the container, mainly for debug purpose
+        :return:
+        '''
+        result = "Container {} (Slots: {}- Free: {}, Weight: {}, Carried Weight: {})\nContains:".format(
+            self.name, self.slots, self.free_slots, self.container_weight, self.weight
+        )
+        for good_quantity in self.contains.values():
+            result += "\n\t{} {}".format(good_quantity[1], good_quantity[0])
+        return result
 
     @property
     def free_slots(self):
