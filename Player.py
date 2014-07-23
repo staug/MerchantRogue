@@ -2,11 +2,11 @@ __author__ = 'Tangil'
 
 import random
 import Util
-import const
+import Constants
 import pygame
 import os
 import math
-
+import GameData
 
 class DisplayableObject(object):
 
@@ -79,7 +79,7 @@ class SpriteObject(object):
                  surface_to_draw=None, surface_memory=None):
         if animation_file:
             self.animation = Util.PygAnimation(
-                [(const.IMAGE_RESOURCE_FOLDER + animation_folder + os.sep +
+                [(Constants.IMAGE_RESOURCE_FOLDER + animation_folder + os.sep +
                   animation_file + ".png", animation_coordinates_in_file, 1.0)]
             )
         self.movable = movable
@@ -89,16 +89,16 @@ class SpriteObject(object):
         self.surface_memory = surface_memory
 
     def graphical_move(self, old_tile_position, new_tile_position):
-        old_pos_x = old_tile_position[0] * const.TILE_SIZE
-        old_pos_y = old_tile_position[1] * const.TILE_SIZE
+        old_pos_x = old_tile_position[0] * Constants.TILE_SIZE
+        old_pos_y = old_tile_position[1] * Constants.TILE_SIZE
         self.surface_to_draw.blit(self.surface_memory, (old_pos_x, old_pos_y),
-                                  pygame.Rect((old_pos_x, old_pos_y), (const.TILE_SIZE, const.TILE_SIZE)))
-        new_pos_x = new_tile_position[0] * const.TILE_SIZE
-        new_pos_y = new_tile_position[1] * const.TILE_SIZE
+                                  pygame.Rect((old_pos_x, old_pos_y), (Constants.TILE_SIZE, Constants.TILE_SIZE)))
+        new_pos_x = new_tile_position[0] * Constants.TILE_SIZE
+        new_pos_y = new_tile_position[1] * Constants.TILE_SIZE
         self.animation.blit(self.surface_to_draw, (new_pos_x, new_pos_y))
 
     def draw(self):
-        image_pos = (self.owner.position_on_tile[0] * const.TILE_SIZE, self.owner.position_on_tile[1] * const.TILE_SIZE)
+        image_pos = (self.owner.position_on_tile[0] * Constants.TILE_SIZE, self.owner.position_on_tile[1] * Constants.TILE_SIZE)
         self.animation.blit(self.surface_to_draw, image_pos)
 
     def set_surface(self, surface_to_draw, surface_memory):
@@ -115,9 +115,9 @@ class AnimatedSpriteObject(SpriteObject):
         super().__init__(movable, animation_folder, None, None,
                          surface_to_draw=surface_to_draw, surface_memory=surface_memory)
         self.animation = Util.PygAnimation(
-            [(str(const.IMAGE_RESOURCE_FOLDER + animation_folder + os.sep + animation_file + "0.png"),
+            [(str(Constants.IMAGE_RESOURCE_FOLDER + animation_folder + os.sep + animation_file + "0.png"),
               animation_coordinates_in_file, 0.2),
-             (str(const.IMAGE_RESOURCE_FOLDER + animation_folder + os.sep + animation_file + "1.png"),
+             (str(Constants.IMAGE_RESOURCE_FOLDER + animation_folder + os.sep + animation_file + "1.png"),
               animation_coordinates_in_file, 0.2)]
         )
         self.animation.play()
@@ -259,6 +259,7 @@ class NonPlayableCharacter(DisplayableObject):
         self.move(random.randint(-1, 1), random.randint(-1, 1), ignore_message=True)
 
     def get_close_to_player(self):
+        print("Player position: " + str(GameData.player.position_on_tile))
         #vector from this object to the target, and distance
         dx = self.current_town.player_position[0] - self.position_on_tile[0]
         dy = self.current_town.player_position[1] - self.position_on_tile[1]

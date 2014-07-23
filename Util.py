@@ -3,7 +3,9 @@ __author__ = 'Tangil'
 
 import random
 import sys
-import Util
+import Constants
+import pygame
+import time
 
 # http://www.roguebasin.com/index.php?title=Markov_chains_name_generator_in_Python
 
@@ -85,19 +87,19 @@ class MName:
                 prefix = prefix[1:] + suffix
         return name.capitalize()
 
-import const
+
 
 class Event(object):
 
     def __init__(self, message):
         # Custom message
-        pygame.event.post(pygame.event.Event(const.DISPLAY_EVENT, message=message))
+        pygame.event.post(pygame.event.Event(Constants.DISPLAY_EVENT, message=message))
 
 class DebugEvent(object):
 
     def __init__(self, message):
         # Custom message
-        pygame.event.post(pygame.event.Event(const.DEBUG_EVENT, message=message))
+        pygame.event.post(pygame.event.Event(Constants.DEBUG_EVENT, message=message))
 
 
 # A STAR Algo
@@ -299,7 +301,7 @@ class SQ_MapHandler:
 
 # TODO: Feature idea: if the same image file is specified, re-use the Surface object. (Make this optional though.)
 
-import pygame, time
+
 
 # setting up constants
 PLAYING = 'playing'

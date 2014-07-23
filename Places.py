@@ -8,7 +8,7 @@ import random
 import Util
 import Player
 import pygame
-
+import Constants
 
 class Building(object):
 
@@ -189,14 +189,14 @@ def door_closed(**kwargs):
     y = kwargs["tile"].position[1]
 
     if kwargs["tile"].characteristics["orientation"] == "horizontal":
-        kwargs["player"].graphical_representation.surface_memory.blit(door_open_source_file.subsurface(pygame.Rect((0,0), (16,16))),
+        kwargs["player"].graphical_representation.surface_memory.blit(door_open_source_file.subsurface(pygame.Rect((0,0), (Tile.TILE_SIZE,Tile.TILE_SIZE))),
                                  (x * Tile.TILE_SIZE, y * Tile.TILE_SIZE))
-        kwargs["player"].graphical_representation.surface_to_draw.blit(door_open_source_file.subsurface(pygame.Rect((0,0), (16,16))),
+        kwargs["player"].graphical_representation.surface_to_draw.blit(door_open_source_file.subsurface(pygame.Rect((0,0), (Tile.TILE_SIZE,Tile.TILE_SIZE))),
                                  (x * Tile.TILE_SIZE, y * Tile.TILE_SIZE))
     else:
-        kwargs["player"].graphical_representation.surface_memory.blit(door_open_source_file.subsurface(pygame.Rect((16,0), (16,16))),
+        kwargs["player"].graphical_representation.surface_memory.blit(door_open_source_file.subsurface(pygame.Rect((16,0), (Tile.TILE_SIZE,Tile.TILE_SIZE))),
                                  (x * Tile.TILE_SIZE, y * Tile.TILE_SIZE))
-        kwargs["player"].graphical_representation.surface_to_draw.blit(door_open_source_file.subsurface(pygame.Rect((16,0), (16,16))),
+        kwargs["player"].graphical_representation.surface_to_draw.blit(door_open_source_file.subsurface(pygame.Rect((16,0), (Tile.TILE_SIZE,Tile.TILE_SIZE))),
                                  (x * Tile.TILE_SIZE, y * Tile.TILE_SIZE))
 
     Util.Event("This door is now open")
@@ -214,7 +214,7 @@ class Tile(object):
     ROCK = "rock"
     DOOR = "door"
 
-    TILE_SIZE = 16
+    TILE_SIZE = Constants.TILE_SIZE
 
     def __init__(self, position, floor_type, tile_map_owner,
                  specific_action_callback=None, specific_action_around_callback=None, decoration_type=None):
@@ -266,7 +266,6 @@ class TileMap(object):
         for x in range(self.max_x):
             for y in range(self.max_y):
                 self.map[(x, y)] = Tile((x, y), Tile.UNKNOWN, self)
-
 
         if make_map:
             self.make_map()
