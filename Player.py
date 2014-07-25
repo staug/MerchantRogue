@@ -148,18 +148,6 @@ class Player(DisplayableObject):
         m3 = Mercenary("A 3rd guy")
         self.mercenaries = [m1, m2, m3]
 
-        self.current_town.player_position = self.position_on_tile
-
-    def move(self, x_tile_offset, y_tile_offset,
-             ignore_tile_blocking=False, ignore_movable=False, ignore_message=False):
-        super().move(x_tile_offset, y_tile_offset, ignore_tile_blocking=ignore_tile_blocking,
-                     ignore_movable=ignore_movable, ignore_message=ignore_message)
-        self.current_town.player_position = self.position_on_tile
-
-    def move_to(self, new_tile_position, ignore_tile_blocking=False, ignore_movable=False, ignore_message=False):
-        super().move_to(new_tile_position, ignore_tile_blocking=ignore_tile_blocking,
-                        ignore_movable=ignore_movable, ignore_message=ignore_message)
-        self.current_town.player_position = self.position_on_tile
 
     def travel_to(self, other_town):
         self.current_town = other_town
@@ -240,8 +228,8 @@ class NonPlayableCharacter(DisplayableObject):
             self.action_when_player = action_when_player
 
     def take_action(self):
-        dx = self.current_town.player_position[0] - self.position_on_tile[0]
-        dy = self.current_town.player_position[1] - self.position_on_tile[1]
+        dx = GameData.player.position_on_tile[0] - self.position_on_tile[0]
+        dy = GameData.player.position_on_tile[1] - self.position_on_tile[1]
         distance = math.sqrt(dx ** 2 + dy ** 2)
         if distance < 2 and len(self.action_when_player) > 0:
             random.choice(self.action_when_player)()
@@ -259,10 +247,9 @@ class NonPlayableCharacter(DisplayableObject):
         self.move(random.randint(-1, 1), random.randint(-1, 1), ignore_message=True)
 
     def get_close_to_player(self):
-        print("Player position: " + str(GameData.player.position_on_tile))
         #vector from this object to the target, and distance
-        dx = self.current_town.player_position[0] - self.position_on_tile[0]
-        dy = self.current_town.player_position[1] - self.position_on_tile[1]
+        dx = GameData.player.position_on_tile[0] - self.position_on_tile[0]
+        dy = GameData.player.position_on_tile[1] - self.position_on_tile[1]
         distance = math.sqrt(dx ** 2 + dy ** 2)
 
         #normalize it to length 1 (preserving direction), then round it and

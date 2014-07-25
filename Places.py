@@ -68,7 +68,6 @@ class Town(object):
         elif 6 < building_number:
             size = (80, 80)
         self.tile_map = TownTileMap(self, size, make_map=make_map, render_map=render_map)
-        self.player_position=(1, 1)
 
     def __str__(self):
         return self.name
@@ -203,7 +202,7 @@ def door_closed(**kwargs):
 
 
 class Tile(object):
-
+    #TODO: massive change: a door should be an object, not a tile attribute
     UNKNOWN = "unknown"
     FLOOR = "floor"
     WALL = "wall"
@@ -251,6 +250,7 @@ class Tile(object):
 
     @property
     def blocking(self):
+        #TODO: all objects are not blocking! we should have something here...
         return self.floor_type in (Tile.WATER, Tile.WALL, Tile.ROCK) \
                or len(self.object_on_tile) or self.decoration_blocking
 
