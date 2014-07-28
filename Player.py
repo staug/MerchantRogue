@@ -8,13 +8,15 @@ import os
 import math
 import GameData
 
+
 class DisplayableObject(object):
 
-    def __init__(self, current_town, movable=True, position_on_tile=(0, 0),
+    def __init__(self, town=None, movable=True, blocking=False, position_on_tile=(0, 0),
                  graphical_representation = None, surface_to_draw = None, surface_memory = None, delayed_register=False):
-        self.current_town = current_town
+        self.town = town
         self.position_on_tile = position_on_tile
         self.movable = movable
+        self.blocking = blocking
 
         self.graphical_representation = None
         self.set_graphical_representation(graphical_representation)
@@ -23,10 +25,13 @@ class DisplayableObject(object):
             self.set_graphical_surface(surface_to_draw, surface_memory)
 
         if not delayed_register:
-            self.register_object()
+            self.register_object(town=town)
 
-    def register_object(self):
-        self.current_town.tile_map.map[self.position_on_tile].register_object(self)
+    def register_object(self, town=None):
+        if town:
+            town.tile_map.map[self.position_on_tile].register_object(self)
+        elif self.town:
+            self.town.tile_map.map[self.position_on_tile].register_object(self)
 
     def set_graphical_representation(self, graphical_representation):
         if graphical_representation:
@@ -42,7 +47,7 @@ class DisplayableObject(object):
             self.graphical_representation.draw()
 
     def move_to(self, new_tile_position, ignore_tile_blocking=False, ignore_movable=False, ignore_message=False):
-        if new_tile_position not in self.current_town.tile_map.map.keys():
+        if new_tile_position not in self.town.tile_map.map.keys():
             if not ignore_message:
                 Util.Event("{} not in tilemap".format(new_tile_position))
             return False
@@ -50,15 +55,15 @@ class DisplayableObject(object):
             if not ignore_message:
                 Util.Event("Tried to move a non movable object".format(self))
             return False
-        if not ignore_tile_blocking and self.current_town.tile_map.map[new_tile_position].blocking:
+        if not ignore_tile_blocking and self.town.tile_map.map[new_tile_position].blocking:
             if not ignore_message:
                 Util.Event("Illegal move to {}".format(new_tile_position))
             return False
         self.graphical_representation.graphical_move(self.position_on_tile, new_tile_position)
-        self.current_town.tile_map.map[self.position_on_tile].unregister_object(self)
+        self.town.tile_map.map[self.position_on_tile].unregister_object(self)
         self.position_on_tile = new_tile_position
-        self.current_town.tile_map.map[self.position_on_tile].register_object(self)
-        self.current_town.tile_map.map[self.position_on_tile].call_action(player=self)
+        self.town.tile_map.map[self.position_on_tile].register_object(self)
+        self.town.tile_map.map[self.position_on_tile].call_action(player=self)
         return True
 
     def move(self, x_tile_offset, y_tile_offset, ignore_tile_blocking=False,
@@ -150,7 +155,7 @@ class Player(DisplayableObject):
 
 
     def travel_to(self, other_town):
-        self.current_town = other_town
+        self.town = other_town
 
     def buy(self, money):
         if money > self.wealth:
@@ -196,7 +201,7 @@ class Player(DisplayableObject):
 
     def pickup(self):
         game_object = None
-        for an_object in self.current_town.game_object_list:
+        for an_object in self.town.game_object_list:
             if an_object.position_on_tile == self.position_on_tile:
                 game_object = an_object
                 break
@@ -205,7 +210,7 @@ class Player(DisplayableObject):
             return
         try:
             self.store((game_object, 1))
-            self.current_town.game_object_list.remove(game_object)
+            self.town.game_object_list.remove(game_object)
         except InventoryObject.InventoryFull as e:
             Util.Event(e.message)
 
@@ -246,6 +251,9 @@ class NonPlayableCharacter(DisplayableObject):
     def wander(self):
         self.move(random.randint(-1, 1), random.randint(-1, 1), ignore_message=True)
 
+    def do_nothing(self):
+        pass
+
     def get_close_to_player(self):
         #vector from this object to the target, and distance
         dx = GameData.player.position_on_tile[0] - self.position_on_tile[0]
@@ -259,17 +267,17 @@ class NonPlayableCharacter(DisplayableObject):
         self.move(dx, dy, ignore_message=True)
 
     def stay_in_room(self):
-        old_building = self.current_town.tile_map.map[self.position_on_tile].room
+        old_building = self.town.tile_map.map[self.position_on_tile].room
         old_position = self.position_on_tile
         self.wander()
-        if not old_building or self.current_town.tile_map.map[self.position_on_tile].room != old_building:
+        if not old_building or self.town.tile_map.map[self.position_on_tile].room != old_building:
             self.move_to(old_position, ignore_message=True)
 
 
 class TraderNPC(NonPlayableCharacter):
 
     def trade_with_player(self):
-        building = self.current_town.tile_map.map[self.position_on_tile].room
+        building = self.town.tile_map.map[self.position_on_tile].room
         message = ""
         if building and building.goods_available:
             message += "Available: {}".format([str(game_object.name) for game_object in building.goods_available])
