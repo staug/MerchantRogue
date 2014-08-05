@@ -1166,6 +1166,7 @@ class ImagePlane(Plane):
     def __init__(self,
                  name,
                  rect,
+                 tile_size,
                  image_size=None,
                  draggable = False,
                  grab = False,
@@ -1187,6 +1188,7 @@ class ImagePlane(Plane):
                          down_click_callback=down_click_callback, dropped_upon_callback=dropped_upon_callback)
         self.camera_rect = None
         self.image_size = image_size
+        self.tile_size = tile_size
 
     def set_camera(self, camera_size, camera_center=None, camera_top_left=(0,0)):
         self.camera_rect = pygame.Rect(camera_top_left, camera_size)
@@ -1194,13 +1196,13 @@ class ImagePlane(Plane):
         if camera_center:
             self.camera_rect.center = camera_center
 
-    def move_camera_tile_center(self, new_center, tile_size=16):
-        self.camera_rect.center = (new_center[0] * tile_size, new_center[1] * tile_size)
+    def move_camera_tile_center(self, new_center):
+        self.camera_rect.center = (new_center[0] * self.tile_size[0], new_center[1] * self.tile_size[1])
         self.move_camera() # To adjust to the borders...
 
-    def move_camera(self, x=0, y=0, tile_size=16):
-        move_x = x * tile_size
-        move_y = y * tile_size
+    def move_camera(self, x=0, y=0):
+        move_x = x * self.tile_size[0]
+        move_y = y * self.tile_size[1]
 
         # print("Width: {} Height: {} Camera: Top {}/ Left {} Bottom {} Right {}".format(
         #     self.image_size[0], self.image_size[1],

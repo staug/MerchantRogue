@@ -10,6 +10,7 @@ import Player
 import pygame
 import Constants
 
+
 class Building(object):
 
     UNKNOWN = "unknown"
@@ -38,7 +39,8 @@ class TradingPost(Building):
         self.name = Building.TRADING_POST
 
         self.gold = random.randint(1, 200)
-        self.goods_available = [Player.GameObject(Util.MName().new(), town, delayed_register=True) for x in range(random.randint(1, 5))]
+        self.goods_available = [Player.GameObject(Util.MName().new(), town, delayed_register=True)
+                                for x in range(random.randint(1, 5))]
 
         self.decoration_list = {
             "1x1": [("Decor", True, (0, 64)), ("Decor", True, (16, 64)), ("Decor", True, (32, 64)),
@@ -177,6 +179,8 @@ def test_message(**kwargs):
 
 
 def door_closed(**kwargs):
+    # TODO update the graphical part to take into acount taht a door is an object
+
     if kwargs["tile"].characteristics["closed"] == "true":
         Util.Event("This door is closed")
     else:
@@ -187,16 +191,22 @@ def door_closed(**kwargs):
     x = kwargs["tile"].position[0]
     y = kwargs["tile"].position[1]
 
+    file_tile_size = (16, 16)
+    # We need to copy the picture on both the surface memory and the real one...
     if kwargs["tile"].characteristics["orientation"] == "horizontal":
-        kwargs["player"].graphical_representation.surface_memory.blit(door_open_source_file.subsurface(pygame.Rect((0,0), (Tile.TILE_SIZE,Tile.TILE_SIZE))),
-                                 (x * Tile.TILE_SIZE, y * Tile.TILE_SIZE))
-        kwargs["player"].graphical_representation.surface_to_draw.blit(door_open_source_file.subsurface(pygame.Rect((0,0), (Tile.TILE_SIZE,Tile.TILE_SIZE))),
-                                 (x * Tile.TILE_SIZE, y * Tile.TILE_SIZE))
+        kwargs["player"].graphical_representation.surface_memory.blit(
+            door_open_source_file.subsurface(pygame.Rect((0, 0), file_tile_size)),
+            (x * Constants.TILE_SIZE[0], y * Constants.TILE_SIZE[1]))
+        kwargs["player"].graphical_representation.surface_to_draw.blit(
+            door_open_source_file.subsurface(pygame.Rect((0, 0), file_tile_size)),
+            (x * Constants.TILE_SIZE[0], y * Constants.TILE_SIZE[1]))
     else:
-        kwargs["player"].graphical_representation.surface_memory.blit(door_open_source_file.subsurface(pygame.Rect((16,0), (Tile.TILE_SIZE,Tile.TILE_SIZE))),
-                                 (x * Tile.TILE_SIZE, y * Tile.TILE_SIZE))
-        kwargs["player"].graphical_representation.surface_to_draw.blit(door_open_source_file.subsurface(pygame.Rect((16,0), (Tile.TILE_SIZE,Tile.TILE_SIZE))),
-                                 (x * Tile.TILE_SIZE, y * Tile.TILE_SIZE))
+        kwargs["player"].graphical_representation.surface_memory.blit(
+            door_open_source_file.subsurface(pygame.Rect((file_tile_size[0], 0), file_tile_size)),
+            (x * Constants.TILE_SIZE[0], y * Constants.TILE_SIZE[1]))
+        kwargs["player"].graphical_representation.surface_to_draw.blit(
+            door_open_source_file.subsurface(pygame.Rect((file_tile_size[0], 0), file_tile_size)),
+            (x * Constants.TILE_SIZE[0], y * Constants.TILE_SIZE[1]))
 
     Util.Event("This door is now open")
 
@@ -212,8 +222,6 @@ class Tile(object):
     WATER = "water"
     ROCK = "rock"
     DOOR = "door"
-
-    TILE_SIZE = Constants.TILE_SIZE
 
     def __init__(self, position, floor_type, tile_map_owner,
                  specific_action_callback=None, specific_action_around_callback=None, decoration_type=None):
@@ -247,12 +255,10 @@ class Tile(object):
     def unregister_object(self, an_object):
         self.object_on_tile.remove(an_object)
 
-
     @property
     def blocking(self):
         #TODO: all objects are not blocking! we should have something here...
-        return self.floor_type in (Tile.WATER, Tile.WALL, Tile.ROCK) \
-               or len(self.object_on_tile) or self.decoration_blocking
+        return self.floor_type in (Tile.WATER, Tile.WALL, Tile.ROCK) or len(self.object_on_tile) or self.decoration_blocking
 
 
 class TileMap(object):
@@ -310,7 +316,7 @@ class TownTileMap(TileMap):
         default = (0, 0)
         for room in self.rooms:
             if room.building.name == building_name:
-                for trials in range (100):
+                for trials in range(100):
                     place = random.choice(room.places)
                     if self.map[place].floor_type == Tile.FLOOR and not self.map[place].blocking:
                         return place
@@ -439,7 +445,7 @@ class TownTileMap(TileMap):
                 while nb_placed < nb_doors:
                     place = random.choice(self.places)
                     weight = self.compute_tile_weight(place[0], place[1],
-                                                (Tile.FLOOR, Tile.WALL), tile_map, max_x, max_y)
+                                                      (Tile.FLOOR, Tile.WALL), tile_map, max_x, max_y)
                     if weight in (7, 11, 14, 13):
                         if weight in (7, 13):
                             tile_map[place].set_door(horizontal=False)
@@ -514,7 +520,6 @@ class TownTileMap(TileMap):
                         if len(possible_starts) > 0:
                             self.default_start_player_position = random.choice(possible_starts)
 
-
             # finish building it - Now redecorating
             for room in room_placed:
                 room.add_deco(self.map, self.max_x, self.max_y)
@@ -524,101 +529,117 @@ class TownTileMap(TileMap):
 
     def render(self):
 
-        def build_floor_tile_array(floor_source_file, origin_x, origin_y):
-            return [
-                floor_source_file.subsurface(pygame.Rect((origin_x + 5 * 16, origin_y + 0 * 16), (16, 16))),
-                floor_source_file.subsurface(pygame.Rect((origin_x + 3 * 16, origin_y + 2 * 16), (16, 16))),
-                floor_source_file.subsurface(pygame.Rect((origin_x + 4 * 16, origin_y + 1 * 16), (16, 16))),
-                floor_source_file.subsurface(pygame.Rect((origin_x + 0 * 16, origin_y + 2 * 16), (16, 16))),
-                floor_source_file.subsurface(pygame.Rect((origin_x + 3 * 16, origin_y + 0 * 16), (16, 16))),
-                floor_source_file.subsurface(pygame.Rect((origin_x + 3 * 16, origin_y + 1 * 16), (16, 16))),
-                floor_source_file.subsurface(pygame.Rect((origin_x + 0 * 16, origin_y + 0 * 16), (16, 16))),
-                floor_source_file.subsurface(pygame.Rect((origin_x + 0 * 16, origin_y + 1 * 16), (16, 16))),
-                floor_source_file.subsurface(pygame.Rect((origin_x + 6 * 16, origin_y + 1 * 16), (16, 16))),
-                floor_source_file.subsurface(pygame.Rect((origin_x + 2 * 16, origin_y + 2 * 16), (16, 16))),
-                floor_source_file.subsurface(pygame.Rect((origin_x + 5 * 16, origin_y + 1 * 16), (16, 16))),
-                floor_source_file.subsurface(pygame.Rect((origin_x + 1 * 16, origin_y + 2 * 16), (16, 16))),
-                floor_source_file.subsurface(pygame.Rect((origin_x + 2 * 16, origin_y + 0 * 16), (16, 16))),
-                floor_source_file.subsurface(pygame.Rect((origin_x + 2 * 16, origin_y + 1 * 16), (16, 16))),
-                floor_source_file.subsurface(pygame.Rect((origin_x + 1 * 16, origin_y + 0 * 16), (16, 16))),
-                floor_source_file.subsurface(pygame.Rect((origin_x + 1 * 16, origin_y + 1 * 16), (16, 16)))
+        def build_floor_tile_array_dawnlike(floor_source_file, origin_x, origin_y, destination_tile_size):
+            file_tile_size = (16, 16)
+            x_dev = file_tile_size[0]
+            y_dev = file_tile_size[1]
+            tile = [
+                floor_source_file.subsurface(pygame.Rect((origin_x + 5 * x_dev, origin_y + 0 * y_dev), file_tile_size)).copy(),
+                floor_source_file.subsurface(pygame.Rect((origin_x + 3 * x_dev, origin_y + 2 * y_dev), file_tile_size)).copy(),
+                floor_source_file.subsurface(pygame.Rect((origin_x + 4 * x_dev, origin_y + 1 * y_dev), file_tile_size)).copy(),
+                floor_source_file.subsurface(pygame.Rect((origin_x + 0 * x_dev, origin_y + 2 * y_dev), file_tile_size)).copy(),
+                floor_source_file.subsurface(pygame.Rect((origin_x + 3 * x_dev, origin_y + 0 * y_dev), file_tile_size)).copy(),
+                floor_source_file.subsurface(pygame.Rect((origin_x + 3 * x_dev, origin_y + 1 * y_dev), file_tile_size)).copy(),
+                floor_source_file.subsurface(pygame.Rect((origin_x + 0 * x_dev, origin_y + 0 * y_dev), file_tile_size)).copy(),
+                floor_source_file.subsurface(pygame.Rect((origin_x + 0 * x_dev, origin_y + 1 * y_dev), file_tile_size)).copy(),
+                floor_source_file.subsurface(pygame.Rect((origin_x + 6 * x_dev, origin_y + 1 * y_dev), file_tile_size)).copy(),
+                floor_source_file.subsurface(pygame.Rect((origin_x + 2 * x_dev, origin_y + 2 * y_dev), file_tile_size)).copy(),
+                floor_source_file.subsurface(pygame.Rect((origin_x + 5 * x_dev, origin_y + 1 * y_dev), file_tile_size)).copy(),
+                floor_source_file.subsurface(pygame.Rect((origin_x + 1 * x_dev, origin_y + 2 * y_dev), file_tile_size)).copy(),
+                floor_source_file.subsurface(pygame.Rect((origin_x + 2 * x_dev, origin_y + 0 * y_dev), file_tile_size)).copy(),
+                floor_source_file.subsurface(pygame.Rect((origin_x + 2 * x_dev, origin_y + 1 * y_dev), file_tile_size)).copy(),
+                floor_source_file.subsurface(pygame.Rect((origin_x + 1 * x_dev, origin_y + 0 * y_dev), file_tile_size)).copy(),
+                floor_source_file.subsurface(pygame.Rect((origin_x + 1 * x_dev, origin_y + 1 * y_dev), file_tile_size)).copy()
             ]
+            scaled_tile = []
+            for a_tile in tile:
+                scaled_tile.append(pygame.transform.smoothscale(a_tile, destination_tile_size))
+            return scaled_tile
 
-        def build_wall_tile_array(wall_source_file, origin_x, origin_y):
-            return [
-                wall_source_file.subsurface(pygame.Rect((origin_x + 3 * 16, origin_y + 0 * 16), (16, 16))),
-                wall_source_file.subsurface(pygame.Rect((origin_x + 1 * 16, origin_y + 1 * 16), (16, 16))),
-                wall_source_file.subsurface(pygame.Rect((origin_x + 1 * 16, origin_y + 0 * 16), (16, 16))),
-                wall_source_file.subsurface(pygame.Rect((origin_x + 0 * 16, origin_y + 2 * 16), (16, 16))),
-                wall_source_file.subsurface(pygame.Rect((origin_x + 0 * 16, origin_y + 1 * 16), (16, 16))),
-                wall_source_file.subsurface(pygame.Rect((origin_x + 0 * 16, origin_y + 1 * 16), (16, 16))),
-                wall_source_file.subsurface(pygame.Rect((origin_x + 0 * 16, origin_y + 0 * 16), (16, 16))),
-                wall_source_file.subsurface(pygame.Rect((origin_x + 3 * 16, origin_y + 1 * 16), (16, 16))),
-                wall_source_file.subsurface(pygame.Rect((origin_x + 1 * 16, origin_y + 0 * 16), (16, 16))),
-                wall_source_file.subsurface(pygame.Rect((origin_x + 2 * 16, origin_y + 2 * 16), (16, 16))),
-                wall_source_file.subsurface(pygame.Rect((origin_x + 1 * 16, origin_y + 0 * 16), (16, 16))),
-                wall_source_file.subsurface(pygame.Rect((origin_x + 4 * 16, origin_y + 2 * 16), (16, 16))),
-                wall_source_file.subsurface(pygame.Rect((origin_x + 2 * 16, origin_y + 0 * 16), (16, 16))),
-                wall_source_file.subsurface(pygame.Rect((origin_x + 5 * 16, origin_y + 1 * 16), (16, 16))),
-                wall_source_file.subsurface(pygame.Rect((origin_x + 4 * 16, origin_y + 1 * 16), (16, 16))),
-                wall_source_file.subsurface(pygame.Rect((origin_x + 4 * 16, origin_y + 2 * 16), (16, 16))),
+        def build_wall_tile_array_dawnlike(wall_source_file, origin_x, origin_y, destination_tile_size):
+            file_tile_size = (16, 16)
+            x_dev = file_tile_size[0]
+            y_dev = file_tile_size[1]
+            tile = [
+                wall_source_file.subsurface(pygame.Rect((origin_x + 3 * x_dev, origin_y + 0 * y_dev), file_tile_size)).copy(),
+                wall_source_file.subsurface(pygame.Rect((origin_x + 1 * x_dev, origin_y + 1 * y_dev), file_tile_size)).copy(),
+                wall_source_file.subsurface(pygame.Rect((origin_x + 1 * x_dev, origin_y + 0 * y_dev), file_tile_size)).copy(),
+                wall_source_file.subsurface(pygame.Rect((origin_x + 0 * x_dev, origin_y + 2 * y_dev), file_tile_size)).copy(),
+                wall_source_file.subsurface(pygame.Rect((origin_x + 0 * x_dev, origin_y + 1 * y_dev), file_tile_size)).copy(),
+                wall_source_file.subsurface(pygame.Rect((origin_x + 0 * x_dev, origin_y + 1 * y_dev), file_tile_size)).copy(),
+                wall_source_file.subsurface(pygame.Rect((origin_x + 0 * x_dev, origin_y + 0 * y_dev), file_tile_size)).copy(),
+                wall_source_file.subsurface(pygame.Rect((origin_x + 3 * x_dev, origin_y + 1 * y_dev), file_tile_size)).copy(),
+                wall_source_file.subsurface(pygame.Rect((origin_x + 1 * x_dev, origin_y + 0 * y_dev), file_tile_size)).copy(),
+                wall_source_file.subsurface(pygame.Rect((origin_x + 2 * x_dev, origin_y + 2 * y_dev), file_tile_size)).copy(),
+                wall_source_file.subsurface(pygame.Rect((origin_x + 1 * x_dev, origin_y + 0 * y_dev), file_tile_size)).copy(),
+                wall_source_file.subsurface(pygame.Rect((origin_x + 4 * x_dev, origin_y + 2 * y_dev), file_tile_size)).copy(),
+                wall_source_file.subsurface(pygame.Rect((origin_x + 2 * x_dev, origin_y + 0 * y_dev), file_tile_size)).copy(),
+                wall_source_file.subsurface(pygame.Rect((origin_x + 5 * x_dev, origin_y + 1 * y_dev), file_tile_size)).copy(),
+                wall_source_file.subsurface(pygame.Rect((origin_x + 4 * x_dev, origin_y + 1 * y_dev), file_tile_size)).copy(),
+                wall_source_file.subsurface(pygame.Rect((origin_x + 4 * x_dev, origin_y + 2 * y_dev), file_tile_size)).copy()
             ]
+            scaled_tile = []
+            for a_tile in tile:
+                scaled_tile.append(pygame.transform.smoothscale(a_tile, destination_tile_size))
+            return scaled_tile
 
         if not self.surface_memory:
 
-            self.surface_memory = pygame.Surface((self.max_x * Tile.TILE_SIZE, self.max_y * Tile.TILE_SIZE))
+            self.surface_memory = pygame.Surface((self.max_x * Constants.TILE_SIZE[0],
+                                                  self.max_y * Constants.TILE_SIZE[1]))
 
-            wall_source_file = pygame.image.load('./resources/img/Objects/Wall.png').convert_alpha()
-            floor_source_file = pygame.image.load('./resources/img/Objects/Floor.png').convert_alpha()
-            door_closed_source_file = pygame.image.load('./resources/img/Objects/Door0.png').convert_alpha()
-            door_open_source_file = pygame.image.load('./resources/img/Objects/Door0.png').convert_alpha()
+            wall_source_file_d = pygame.image.load(Constants.IMAGE_RESOURCE_FOLDER_DAWNLIKE + 'Objects/Wall.png').convert_alpha()
+            floor_source_file_d = pygame.image.load(Constants.IMAGE_RESOURCE_FOLDER_DAWNLIKE + 'Objects/Floor.png').convert_alpha()
+            door_closed_source_file = pygame.image.load(Constants.IMAGE_RESOURCE_FOLDER_DAWNLIKE + 'Objects/Door0.png').convert_alpha()
 
-            dirt_image = build_floor_tile_array(floor_source_file, 0, 288)
-            floor_image = build_floor_tile_array(floor_source_file, 112, 288)
-            grass_image = build_floor_tile_array(floor_source_file, 112, 96)
-            water_image = build_floor_tile_array(floor_source_file, 224, 288)
-            rock_image = build_floor_tile_array(floor_source_file, 224, 96)
-            path_image = build_floor_tile_array(floor_source_file, 0, 96)
+            dirt_image = build_floor_tile_array_dawnlike(floor_source_file_d, 0, 288, Constants.TILE_SIZE)
+            floor_image = build_floor_tile_array_dawnlike(floor_source_file_d, 112, 288, Constants.TILE_SIZE)
+            grass_image = build_floor_tile_array_dawnlike(floor_source_file_d, 112, 96, Constants.TILE_SIZE)
+            water_image = build_floor_tile_array_dawnlike(floor_source_file_d, 224, 288, Constants.TILE_SIZE)
+            rock_image = build_floor_tile_array_dawnlike(floor_source_file_d, 224, 96, Constants.TILE_SIZE)
+            path_image = build_floor_tile_array_dawnlike(floor_source_file_d, 0, 96, Constants.TILE_SIZE)
 
-            wall_image = build_wall_tile_array(wall_source_file, 112, 48)
+            wall_image = build_wall_tile_array_dawnlike(wall_source_file_d, 112, 48, Constants.TILE_SIZE)
 
             for x in range(self.max_x):
                 for y in range(self.max_y):
+                    destination_pos = (x * Constants.TILE_SIZE[0], y * Constants.TILE_SIZE[1])
                     if self.map[(x, y)].floor_type == Tile.GRASS:
                         self.surface_memory.blit(grass_image[self.compute_tile_weight(x, y, Tile.GRASS)],
-                                                 (x * Tile.TILE_SIZE, y * Tile.TILE_SIZE))
+                                                 destination_pos)
                     elif self.map[(x, y)].floor_type == Tile.WATER:
                         self.surface_memory.blit(water_image[self.compute_tile_weight(x, y, Tile.WATER)],
-                                                 (x * Tile.TILE_SIZE, y * Tile.TILE_SIZE))
+                                                 destination_pos)
                     elif self.map[(x, y)].floor_type == Tile.ROCK:
                         self.surface_memory.blit(rock_image[self.compute_tile_weight(x, y, Tile.ROCK)],
-                                                 (x * Tile.TILE_SIZE, y * Tile.TILE_SIZE))
+                                                 destination_pos)
                     elif self.map[(x, y)].floor_type == Tile.WALL:
                         self.surface_memory.blit(wall_image[self.compute_tile_weight(x, y, Tile.WALL)],
-                                                 (x * Tile.TILE_SIZE, y * Tile.TILE_SIZE))
+                                                 destination_pos)
                     elif self.map[(x, y)].floor_type == Tile.PATH:
                         self.surface_memory.blit(path_image[self.compute_tile_weight(x, y, Tile.PATH)],
-                                                 (x * Tile.TILE_SIZE, y * Tile.TILE_SIZE))
+                                                 destination_pos)
                     elif self.map[(x, y)].floor_type == Tile.DIRT:
                         self.surface_memory.blit(dirt_image[self.compute_tile_weight(x, y, Tile.DIRT)],
-                                                 (x * Tile.TILE_SIZE, y * Tile.TILE_SIZE))
+                                                 destination_pos)
                     elif self.map[(x, y)].floor_type == Tile.FLOOR:
                         self.surface_memory.blit(floor_image[self.compute_tile_weight(x, y, Tile.FLOOR)],
-                                                 (x * Tile.TILE_SIZE, y * Tile.TILE_SIZE))
+                                                 destination_pos)
                     elif self.map[(x, y)].floor_type == Tile.DOOR:
                         # for a door we do the regular floor, and decorate later
                         self.surface_memory.blit(floor_image[self.compute_tile_weight(x, y, Tile.FLOOR)],
-                                                 (x * Tile.TILE_SIZE, y * Tile.TILE_SIZE))
+                                                 destination_pos)
 
                     # Now add the decoration...
                     if self.map[(x, y)].decoration_type:
                         if self.map[(x, y)].decoration_type == Tile.DOOR:
+                            # TODO Change as doors needs to be drawn like regular object!
                             if self.map[(x, y)].characteristics["orientation"] == "horizontal":
                                 self.surface_memory.blit(door_closed_source_file.subsurface(pygame.Rect((0,0), (16,16))),
-                                                 (x * Tile.TILE_SIZE, y * Tile.TILE_SIZE))
+                                                 destination_pos)
                             else:
                                 self.surface_memory.blit(door_closed_source_file.subsurface(pygame.Rect((16,0), (16,16))),
-                                                 (x * Tile.TILE_SIZE, y * Tile.TILE_SIZE))
+                                                 destination_pos)
                         else:
                             Player.DisplayableObject(self.town, movable=False, position_on_tile=(x,y),
                                                      graphical_representation=Player.AnimatedSpriteObject(False, "Objects", self.map[(x, y)].decoration_type[0], self.map[(x, y)].decoration_type[2]),

@@ -112,9 +112,9 @@ if __name__ == '__main__':
     Game.start_new_game(20)
 
     # Step 3 - Finish the graphical init for this town.
-    main_image = planes.ImagePlane("Main Image", pygame.Rect((0, 0), Constants.PLACE_WINDOW_SIZE),
+    main_image = planes.ImagePlane("Main Image", pygame.Rect((0, 0), Constants.PLACE_WINDOW_SIZE), Constants.TILE_SIZE,
                                    image_size=GameData.current_town.tile_map.surface_memory.get_rect().size)
-    main_image.image.blit(GameData.current_town.tile_map.surface_memory, (0,0))
+    main_image.image.blit(GameData.current_town.tile_map.surface_memory, (0, 0))
     screen.sub(main_image)
     main_image.set_camera(Constants.PLACE_WINDOW_SIZE)
     main_image.move_camera_tile_center(GameData.player.position_on_tile)

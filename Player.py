@@ -84,7 +84,7 @@ class SpriteObject(object):
                  surface_to_draw=None, surface_memory=None):
         if animation_file:
             self.animation = Util.PygAnimation(
-                [(Constants.IMAGE_RESOURCE_FOLDER + animation_folder + os.sep +
+                [(Constants.IMAGE_RESOURCE_FOLDER_DAWNLIKE + animation_folder + os.sep +
                   animation_file + ".png", animation_coordinates_in_file, 1.0)]
             )
         self.movable = movable
@@ -94,16 +94,17 @@ class SpriteObject(object):
         self.surface_memory = surface_memory
 
     def graphical_move(self, old_tile_position, new_tile_position):
-        old_pos_x = old_tile_position[0] * Constants.TILE_SIZE
-        old_pos_y = old_tile_position[1] * Constants.TILE_SIZE
+        old_pos_x = old_tile_position[0] * Constants.TILE_SIZE[0]
+        old_pos_y = old_tile_position[1] * Constants.TILE_SIZE[1]
         self.surface_to_draw.blit(self.surface_memory, (old_pos_x, old_pos_y),
-                                  pygame.Rect((old_pos_x, old_pos_y), (Constants.TILE_SIZE, Constants.TILE_SIZE)))
-        new_pos_x = new_tile_position[0] * Constants.TILE_SIZE
-        new_pos_y = new_tile_position[1] * Constants.TILE_SIZE
+                                  pygame.Rect((old_pos_x, old_pos_y), Constants.TILE_SIZE))
+        new_pos_x = new_tile_position[0] * Constants.TILE_SIZE[0]
+        new_pos_y = new_tile_position[1] * Constants.TILE_SIZE[1]
         self.animation.blit(self.surface_to_draw, (new_pos_x, new_pos_y))
 
     def draw(self):
-        image_pos = (self.owner.position_on_tile[0] * Constants.TILE_SIZE, self.owner.position_on_tile[1] * Constants.TILE_SIZE)
+        image_pos = (self.owner.position_on_tile[0] * Constants.TILE_SIZE[0],
+                     self.owner.position_on_tile[1] * Constants.TILE_SIZE[1])
         self.animation.blit(self.surface_to_draw, image_pos)
 
     def set_surface(self, surface_to_draw, surface_memory):
@@ -120,9 +121,9 @@ class AnimatedSpriteObject(SpriteObject):
         super().__init__(movable, animation_folder, None, None,
                          surface_to_draw=surface_to_draw, surface_memory=surface_memory)
         self.animation = Util.PygAnimation(
-            [(str(Constants.IMAGE_RESOURCE_FOLDER + animation_folder + os.sep + animation_file + "0.png"),
+            [(str(Constants.IMAGE_RESOURCE_FOLDER_DAWNLIKE + animation_folder + os.sep + animation_file + "0.png"),
               animation_coordinates_in_file, 0.2),
-             (str(Constants.IMAGE_RESOURCE_FOLDER + animation_folder + os.sep + animation_file + "1.png"),
+             (str(Constants.IMAGE_RESOURCE_FOLDER_DAWNLIKE + animation_folder + os.sep + animation_file + "1.png"),
               animation_coordinates_in_file, 0.2)]
         )
         self.animation.play()
