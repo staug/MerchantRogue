@@ -36,7 +36,8 @@ class Game():
 
         Util.DebugEvent("Setting up player")
         GameData.player = Player.Player(GameData.current_town,
-                           graphical_representation=Player.AnimatedSpriteObject(True, "Characters", "Player", (0, 0)),
+                           graphical_representation=Player.AnimatedSpriteObject(True, Constants.DAWNLIKE_TYPE,
+                                                                                "Characters", "Player", (0, 0)),
                            position_on_tile=GameData.current_town.tile_map.default_start_player_position,)
 
         Util.DebugEvent("Setting up objects in the towns...")
@@ -50,13 +51,13 @@ class Game():
                 #                        graphical_representation=Player.AnimatedSpriteObject(True, "Characters", "Player", coordinates))
                 npc = Player.NonPlayableCharacter(town,
                                        position_on_tile=(i * 1, i * 2),
-                                       graphical_representation=Player.AnimatedSpriteObject(True, "Characters", "Player", coordinates))
+                                       graphical_representation=Player.AnimatedSpriteObject(True, Constants.DAWNLIKE_TYPE, "Characters", "Player", coordinates))
 
                 town.npc_list.append(npc)
 
             for i in range(25):
                 an_object = Player.GameObject("A leftover object", town, position_on_tile=(random.randint(0, town.tile_map.max_x - 1), random.randint(0, town.tile_map.max_y - 1)),
-                                              graphical_representation = Player.AnimatedSpriteObject(True, "Objects", "Ground", (16, 48)),
+                                              graphical_representation = Player.AnimatedSpriteObject(False, Constants.DAWNLIKE_TYPE, "Objects", "Ground", (16, 48)),
                                               delayed_register=True)
                 town.game_object_list.append(an_object)
 

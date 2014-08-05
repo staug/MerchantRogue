@@ -368,7 +368,8 @@ class PygAnimation(object):
             for i in range(self.numFrames):
                 # load each frame of animation into _images
                 frame = frames[i]
-                assert type(frame) in (list, tuple) and len(frame) == 2 or 3, 'Frame %s has incorrect format.' % (i)
+                #assert type(frame) in (list, tuple) and len(frame) == 2 or 5, 'Frame %s has incorrect format.' % (i)
+                assert type(frame) in (list, tuple) and len(frame) == 5, 'Frame %s has incorrect format.' % (i)
                 assert type(frame[0]) in (str, pygame.Surface), 'Frame %s image must be a string filename or a pygame.Surface' % (i)
                 if len(frame) == 2:
                     assert frame[1] > 0, 'Frame %s duration must be greater than zero.' % (i)
@@ -378,12 +379,13 @@ class PygAnimation(object):
                         frame = (PygAnimation.loaded_image[frame[0]].copy(), frame[1])
                 else:
                     assert frame[2] > 0, 'Frame %s duration must be greater than zero.' % (i)
+                    file_tile_size = frame[3]
+                    game_tile_size = frame[4]
                     if type(frame[0]) == str:
                         if frame[0] not in PygAnimation.loaded_image.keys():
                             PygAnimation.loaded_image[frame[0]] = pygame.image.load(frame[0]).convert_alpha()
-                        # TODO!!!!
-                        frame = (PygAnimation.loaded_image[frame[0]].subsurface(frame[1], (16, 16)).copy(), frame[2])
-                        #frame = (pygame.image.load(frame[0]).convert_alpha(), frame[2])
+                        a_frame = PygAnimation.loaded_image[frame[0]].subsurface(frame[1], file_tile_size).copy()
+                        frame = (pygame.transform.smoothscale(a_frame, game_tile_size), frame[2])
                 self._images.append(frame[0])
                 self._durations.append(frame[1])
             self._startTimes = self._getStartTimes()

@@ -80,13 +80,14 @@ class SpriteObject(object):
     """
     A non animated object
     """
-    def __init__(self, movable, animation_folder, animation_file, animation_coordinates_in_file,
+    def __init__(self, movable, origin, image_folder, image_file, animation_coordinates_in_file,
                  surface_to_draw=None, surface_memory=None):
-        if animation_file:
-            self.animation = Util.PygAnimation(
-                [(Constants.IMAGE_RESOURCE_FOLDER_DAWNLIKE + animation_folder + os.sep +
-                  animation_file + ".png", animation_coordinates_in_file, 1.0)]
-            )
+        if image_file:
+            if origin == Constants.DAWNLIKE_TYPE:
+                self.animation = Util.PygAnimation(
+                    [(Constants.DAWNLIKE_IMAGE_RESOURCE_FOLDER + image_folder + os.sep + image_file + ".png",
+                      animation_coordinates_in_file, 1.0, Constants.DAWNLIKE_TILE_SIZE, Constants.TILE_SIZE)]
+                )
         self.movable = movable
         self.owner = None
 
@@ -116,17 +117,33 @@ class AnimatedSpriteObject(SpriteObject):
     """
     An animated object
     """
-    def __init__(self, movable, animation_folder, animation_file, animation_coordinates_in_file,
+    def __init__(self, movable, origin, animation_folder, animation_file, animation_coordinates_in_file,
                  surface_to_draw=None, surface_memory=None):
-        super().__init__(movable, animation_folder, None, None,
+        """
+        Main constructor
+        :param movable: Define if the object can move or not
+        :param origin: either Danwlike or Oryx
+        :param animation_folder: the subfolder if any
+        :param animation_file: the file itself
+        :param animation_coordinates_in_file: the place where the sprite is
+        :param surface_to_draw: the main surface (can be redefined later)
+        :param surface_memory: the memory surface (can be redefined later)
+        :return:
+        """
+
+        super().__init__(movable, origin, animation_folder, None, None,
                          surface_to_draw=surface_to_draw, surface_memory=surface_memory)
-        self.animation = Util.PygAnimation(
-            [(str(Constants.IMAGE_RESOURCE_FOLDER_DAWNLIKE + animation_folder + os.sep + animation_file + "0.png"),
-              animation_coordinates_in_file, 0.2),
-             (str(Constants.IMAGE_RESOURCE_FOLDER_DAWNLIKE + animation_folder + os.sep + animation_file + "1.png"),
-              animation_coordinates_in_file, 0.2)]
-        )
-        self.animation.play()
+        if origin == Constants.DAWNLIKE_TYPE:
+            # Dawnlike settings: 16x16, the first image of the animation is in one file called "0"
+            self.animation = Util.PygAnimation(
+                [(str(Constants.DAWNLIKE_IMAGE_RESOURCE_FOLDER + animation_folder + os.sep + animation_file + "0.png"),
+                  animation_coordinates_in_file, 0.2, Constants.DAWNLIKE_TILE_SIZE, Constants.TILE_SIZE),
+                 (str(Constants.DAWNLIKE_IMAGE_RESOURCE_FOLDER + animation_folder + os.sep + animation_file + "1.png"),
+                  animation_coordinates_in_file, 0.2, Constants.DAWNLIKE_TILE_SIZE, Constants.TILE_SIZE)]
+            )
+            self.animation.play()
+        else:
+            raise Exception("Origin type unknown" + origin)
 
 
 class Player(DisplayableObject):
@@ -286,11 +303,11 @@ class TraderNPC(NonPlayableCharacter):
             message += "\n Gold available: {}".format(building.gold)
         Util.Event(message)
 
-    def __init__(self, town, position_on_tile=(0,0),
+    def __init__(self, town, position_on_tile=(0, 0),
                  graphical_representation = None, surface_to_draw=None, surface_memory=None):
         super().__init__(town, position_on_tile=position_on_tile, graphical_representation=graphical_representation,
-                     surface_to_draw=surface_to_draw, surface_memory=surface_memory,
-                     default_action_list=[self.stay_in_room], action_when_player=[self.trade_with_player])
+                         surface_to_draw=surface_to_draw, surface_memory=surface_memory,
+                         default_action_list=[self.stay_in_room], action_when_player=[self.trade_with_player])
         self.friendliness_setting = random.randint(-10, 10)
 
 class InventoryObject(object):
@@ -299,14 +316,14 @@ class InventoryObject(object):
     OBJECT_SLOT = 0
 
     class InventoryFull(Exception):
-        def __init__(self, message=None, error=None):
+        def __init__(self, message=None):
             if not message:
                 message = "This object cannot store more things"
             super().__init__(self, message)
             self.message = message
 
     class ObjectNotFound(Exception):
-        def __init__(self, message=None, error=None):
+        def __init__(self, message=None):
             if not message:
                 message = "This object is not part of this container"
             super().__init__(self, message)

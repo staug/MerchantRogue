@@ -588,9 +588,9 @@ class TownTileMap(TileMap):
             self.surface_memory = pygame.Surface((self.max_x * Constants.TILE_SIZE[0],
                                                   self.max_y * Constants.TILE_SIZE[1]))
 
-            wall_source_file_d = pygame.image.load(Constants.IMAGE_RESOURCE_FOLDER_DAWNLIKE + 'Objects/Wall.png').convert_alpha()
-            floor_source_file_d = pygame.image.load(Constants.IMAGE_RESOURCE_FOLDER_DAWNLIKE + 'Objects/Floor.png').convert_alpha()
-            door_closed_source_file = pygame.image.load(Constants.IMAGE_RESOURCE_FOLDER_DAWNLIKE + 'Objects/Door0.png').convert_alpha()
+            wall_source_file_d = pygame.image.load(Constants.DAWNLIKE_IMAGE_RESOURCE_FOLDER + 'Objects/Wall.png').convert_alpha()
+            floor_source_file_d = pygame.image.load(Constants.DAWNLIKE_IMAGE_RESOURCE_FOLDER + 'Objects/Floor.png').convert_alpha()
+            door_closed_source_file = pygame.image.load(Constants.DAWNLIKE_IMAGE_RESOURCE_FOLDER + 'Objects/Door0.png').convert_alpha()
 
             dirt_image = build_floor_tile_array_dawnlike(floor_source_file_d, 0, 288, Constants.TILE_SIZE)
             floor_image = build_floor_tile_array_dawnlike(floor_source_file_d, 112, 288, Constants.TILE_SIZE)
@@ -642,5 +642,5 @@ class TownTileMap(TileMap):
                                                  destination_pos)
                         else:
                             Player.DisplayableObject(self.town, movable=False, position_on_tile=(x,y),
-                                                     graphical_representation=Player.AnimatedSpriteObject(False, "Objects", self.map[(x, y)].decoration_type[0], self.map[(x, y)].decoration_type[2]),
+                                                     graphical_representation=Player.AnimatedSpriteObject(False, Constants.DAWNLIKE_TYPE, "Objects", self.map[(x, y)].decoration_type[0], self.map[(x, y)].decoration_type[2]),
                                                      surface_to_draw=self.surface_memory, surface_memory=self.surface_memory).draw()
