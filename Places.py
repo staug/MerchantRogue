@@ -1,5 +1,5 @@
 from Displayable import DisplayableObject, AnimatedSpriteObject
-from GameObject import GameObject
+from GameObject import GameObject, Door
 
 __author__ = 'Tangil'
 """
@@ -89,6 +89,12 @@ class Town(object):
             size = (80, 80)
         self.tile_map = TownTileMap(self, size, make_map=True, render_map=True)
 
+    def register_object(self, a_game_object):
+        self.game_object_list.append(a_game_object)
+        if a_game_object.displayable_object and a_game_object.displayable_object.position_on_tile:
+            print(
+                "Adding object " + a_game_object.name + " at " + str(a_game_object.displayable_object.position_on_tile))
+            self.tile_map.map[a_game_object.displayable_object.position_on_tile].register_object(a_game_object)
 
 class Path(object):
     """ A Path links two towns. Note that due to Geography, path from A to B may be different from B to A...
@@ -176,47 +182,7 @@ class TownGraph(object):
         return result
 
 
-def test_message(**kwargs):
-    print("Test 1")
-    Util.Event("Wowwww")
-    print("Test2")
-
-
-def door_closed(**kwargs):
-    # TODO update the graphical part to take into acount taht a door is an object
-
-    if kwargs["tile"].characteristics["closed"] == "true":
-        Util.Event("This door is closed")
-    else:
-        Util.Event("This door is open")
-
-    kwargs["tile"].characteristics["closed"] = "false"
-    door_open_source_file = pygame.image.load('./resources/img/Objects/Door1.png').convert_alpha()
-    x = kwargs["tile"].position[0]
-    y = kwargs["tile"].position[1]
-
-    file_tile_size = (16, 16)
-    # We need to copy the picture on both the surface memory and the real one...
-    if kwargs["tile"].characteristics["orientation"] == "horizontal":
-        kwargs["player"].graphical_representation.surface_memory.blit(
-            door_open_source_file.subsurface(pygame.Rect((0, 0), file_tile_size)),
-            (x * Constants.TILE_SIZE[0], y * Constants.TILE_SIZE[1]))
-        kwargs["player"].graphical_representation.surface_to_draw.blit(
-            door_open_source_file.subsurface(pygame.Rect((0, 0), file_tile_size)),
-            (x * Constants.TILE_SIZE[0], y * Constants.TILE_SIZE[1]))
-    else:
-        kwargs["player"].graphical_representation.surface_memory.blit(
-            door_open_source_file.subsurface(pygame.Rect((file_tile_size[0], 0), file_tile_size)),
-            (x * Constants.TILE_SIZE[0], y * Constants.TILE_SIZE[1]))
-        kwargs["player"].graphical_representation.surface_to_draw.blit(
-            door_open_source_file.subsurface(pygame.Rect((file_tile_size[0], 0), file_tile_size)),
-            (x * Constants.TILE_SIZE[0], y * Constants.TILE_SIZE[1]))
-
-    Util.Event("This door is now open")
-
-
 class Tile(object):
-    #TODO: massive change: a door should be an object, not a tile attribute
     UNKNOWN = "unknown"
     FLOOR = "floor"
     WALL = "wall"
@@ -225,13 +191,9 @@ class Tile(object):
     DIRT = "dirt"
     WATER = "water"
     ROCK = "rock"
-    DOOR = "door"
 
-    def __init__(self, position, floor_type, tile_map_owner,
-                 specific_action_callback=None, specific_action_around_callback=None, decoration_type=None):
+    def __init__(self, position, floor_type, tile_map_owner, decoration_type=None):
         self.floor_type = floor_type
-        self.specific_action_callback = specific_action_callback
-        self.specific_action_around_callback = specific_action_around_callback
         self.decoration_type = decoration_type
         self.room = None
         self.characteristics = {}
@@ -239,19 +201,6 @@ class Tile(object):
         self.tile_map_owner = tile_map_owner
         self.object_on_tile = []
         self.decoration_blocking = False
-
-    def call_action(self, **kwargs):
-        if self.specific_action_callback:
-            self.specific_action_callback(tile=self, **kwargs)
-
-    def set_door(self, horizontal=True):
-        self.floor_type = Tile.DOOR
-        self.decoration_type = Tile.DOOR
-        if horizontal:
-            self.characteristics = {"orientation": "horizontal", "closed": "true"}
-        else:
-            self.characteristics = {"orientation": "vertical", "closed": "true"}
-        self.specific_action_callback = door_closed
 
     def register_object(self, an_object):
         self.object_on_tile.append(an_object)
@@ -261,8 +210,10 @@ class Tile(object):
 
     @property
     def blocking(self):
-        #TODO: all objects are not blocking! we should have something here...
-        return self.floor_type in (Tile.WATER, Tile.WALL, Tile.ROCK) or len(self.object_on_tile) or self.decoration_blocking
+        for game_object in self.object_on_tile:
+            if game_object.blocking:
+                return True
+        return self.floor_type in (Tile.WATER, Tile.WALL, Tile.ROCK) or self.decoration_blocking
 
 
 class TileMap(object):
@@ -451,11 +402,10 @@ class TownTileMap(TileMap):
                     weight = self.compute_tile_weight(place[0], place[1],
                                                       (Tile.FLOOR, Tile.WALL), tile_map, max_x, max_y)
                     if weight in (7, 11, 14, 13):
+                        orientation = Door.ORIENTATION_HORIZONTAL
                         if weight in (7, 13):
-                            tile_map[place].set_door(horizontal=False)
-                        else:
-                            tile_map[place].set_door(horizontal=True)
-                        self.doors.append(place)
+                            orientation = Door.ORIENTATION_VERTICAL
+                        self.doors.append((place, orientation))
                         nb_placed += 1
 
             def add_deco(self, tile_map, max_x, max_y):
@@ -501,11 +451,18 @@ class TownTileMap(TileMap):
                 # Successfully placed all the rooms
                 need_rebuild = False
                 print("Successfully built after {} trials".format(trials))
+
+                print("Settings doors in rooms".format(trials))
+                # a door is an open floor
                 for room in room_placed:
-                    door1 = room.doors[0]
-                    door2 = random.choice(room_placed).doors[0]
+                    for door in room.doors:
+                        self.map[door[0]].floor_type = Tile.FLOOR
+
+                for room in room_placed:
+                    door1 = (room.doors[0])[0]
+                    door2 = (random.choice(room_placed).doors[0])[0]
                     while door1[0] == door2[0] and door1[1] == door2[1]:
-                        door2 = random.choice(room_placed).doors[0]
+                        door2 = (random.choice(room_placed).doors[0])[0]
                     astar = Util.AStar(Util.SQ_MapHandler(self.map, self.max_x, self.max_y))
                     p = astar.findPath(Util.SQ_Location(door1[0], door1[1]), Util.SQ_Location(door2[0], door2[1]))
 
@@ -517,14 +474,14 @@ class TownTileMap(TileMap):
                         possible_starts = []
                         for n in p.nodes:
                             if self.map[(n.location.x, n.location.y)].floor_type not in (
-                                    Tile.FLOOR, Tile.DOOR, Tile.PATH
+                                    Tile.FLOOR, Tile.PATH
                             ):
                                 self.map[(n.location.x, n.location.y)].floor_type = Tile.PATH
                                 possible_starts.append((n.location.x, n.location.y))
                         if len(possible_starts) > 0:
                             self.default_start_player_position = random.choice(possible_starts)
 
-            # finish building it - Now redecorating
+            # finish building it - Now redecorating and carving really the door
             for room in room_placed:
                 room.add_deco(self.map, self.max_x, self.max_y)
             # and adding the room to the official list of room
@@ -683,28 +640,16 @@ class TownTileMap(TileMap):
                         elif self.map[(x, y)].floor_type == Tile.FLOOR:
                             self.surface_memory.blit(floor_image[self.compute_tile_weight(x, y, Tile.FLOOR)],
                                                      destination_pos)
-                        elif self.map[(x, y)].floor_type == Tile.DOOR:
-                            # for a door we do the regular floor, and decorate later
-                            self.surface_memory.blit(floor_image[self.compute_tile_weight(x, y, Tile.FLOOR)],
-                                                     destination_pos)
 
                         # Now add the decoration...
                         if self.map[(x, y)].decoration_type:
-                            if self.map[(x, y)].decoration_type == Tile.DOOR:
-                                # TODO Change as doors needs to be drawn like regular object!
-                                if self.map[(x, y)].characteristics["orientation"] == "horizontal":
-                                    self.surface_memory.blit(door_closed_source_file.subsurface(pygame.Rect((0,0), (16,16))),
-                                                     destination_pos)
-                                else:
-                                    self.surface_memory.blit(door_closed_source_file.subsurface(pygame.Rect((16,0), (16,16))),
-                                                     destination_pos)
-                            else:
                                 DisplayableObject(self.town, movable=False, position_on_tile=(x, y),
-                                                  graphical_representation=AnimatedSpriteObject(False, style, "Objects",
+                                                  graphical_representation=AnimatedSpriteObject(style, "Objects",
                                                                                                 self.map[(
-                                                                                                x, y)].decoration_type[
+                                                                                                    x,
+                                                                                                    y)].decoration_type[
                                                                                                     0], self.map[(
-                                                      x, y)].decoration_type[2]),
+                                                          x, y)].decoration_type[2]),
                                                          surface_to_draw=self.surface_memory, surface_memory=self.surface_memory).draw()
             else:
                 source_file_o = pygame.image.load(Constants.ORYX_IMAGE_RESOURCE_FOLDER + 'oryx_16bit_fantasy_world_trans.png').convert_alpha()
@@ -733,9 +678,5 @@ class TownTileMap(TileMap):
                             self.surface_memory.blit(dirt_image[self.compute_tile_weight(x, y, Tile.DIRT)],
                                                      destination_pos)
                         elif self.map[(x, y)].floor_type == Tile.FLOOR:
-                            self.surface_memory.blit(floor_image[self.compute_tile_weight(x, y, Tile.FLOOR)],
-                                                     destination_pos)
-                        elif self.map[(x, y)].floor_type == Tile.DOOR:
-                            # for a door we do the regular floor, and decorate later
                             self.surface_memory.blit(floor_image[self.compute_tile_weight(x, y, Tile.FLOOR)],
                                                      destination_pos)

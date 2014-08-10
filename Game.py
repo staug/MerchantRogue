@@ -1,6 +1,6 @@
 from Displayable import DisplayableObject
 from Displayable import AnimatedSpriteObject
-from GameObject import GameObject
+from GameObject import GameObject, Door
 
 __author__ = 'Tangil'
 
@@ -40,13 +40,13 @@ class Game():
 
         Util.DebugEvent("Setting up player")
         GameData.player = Player.Player(GameData.current_town,
-                                        graphical_representation=AnimatedSpriteObject(True, Constants.DAWNLIKE_STYLE,
-                                                                                "Characters", "Player", (0, 0)),
+                                        graphical_representation=AnimatedSpriteObject(Constants.DAWNLIKE_STYLE,
+                                                                                      "Characters", "Player", (0, 0)),
                            position_on_tile=GameData.current_town.tile_map.default_start_player_position,)
 
         Util.DebugEvent("Setting up objects in the towns...")
         for town in GameData.town_graph.towns:
-            for i in range(2):
+            for i in range(1):
                 image_coordinate_x = [x*16 for x in range(0, 7)]
                 image_coordinate_y = [y*16 for y in (3, 4, 7, 8)]
                 coordinates = (random.choice(image_coordinate_x), random.choice(image_coordinate_y))
@@ -55,11 +55,11 @@ class Game():
                 #                        graphical_representation=Player.AnimatedSpriteObject(True, "Characters", "Player", coordinates))
                 npc = Player.NonPlayableCharacter(town,
                                        position_on_tile=(i * 1, i * 2),
-                                       graphical_representation=AnimatedSpriteObject(True, Constants.DAWNLIKE_STYLE,
+                                       graphical_representation=AnimatedSpriteObject(Constants.DAWNLIKE_STYLE,
                                                                                      "Characters", "Player",
                                                                                      coordinates))
 
-                town.npc_list.append(npc)
+                # town.npc_list.append(npc)
 
             for i in range(25):
                 """
@@ -88,11 +88,14 @@ class Game():
                                                                             random.randint(0, town.tile_map.max_x - 1),
                                                                             random.randint(0, town.tile_map.max_y - 1)),
                                                                             graphical_representation=AnimatedSpriteObject(
-                                                                                False, Constants.DAWNLIKE_STYLE,
-                                                                                "Objects", "Ground", (16, 48)),
+                                                                                Constants.DAWNLIKE_STYLE, "Objects",
+                                                                                "Ground", (16, 48)),
                                                                             delayed_register=True))
                 town.game_object_list.append(an_object)
-
+                # a door is an open object
+            for room in town.tile_map.rooms:
+                for door in room.doors:
+                    town.register_object(Door(town, door[1], door[0], closed=True))
 
         Util.DebugEvent("Setting up objects in the other places (To be done later)...")
 

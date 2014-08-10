@@ -63,11 +63,19 @@ class DisplayableObject(object):
             if not ignore_message:
                 Util.Event("Illegal move to {}".format(new_tile_position))
             return False
+        # Test to know if any objects with callbacks are in the new position
+        print("New tile position: " + str(new_tile_position))
+        for an_object in self.town.tile_map.map[new_tile_position].object_on_tile:
+            print("OBJecT THERE")
+            if not an_object.call_action():
+                Util.Event("The object at {} prevented the move".format(new_tile_position))
+                return False
+
         self.graphical_representation.graphical_move(self.position_on_tile, new_tile_position)
         self.town.tile_map.map[self.position_on_tile].unregister_object(self)
         self.position_on_tile = new_tile_position
         self.town.tile_map.map[self.position_on_tile].register_object(self)
-        self.town.tile_map.map[self.position_on_tile].call_action(player=self)
+        # self.town.tile_map.map[self.position_on_tile].call_action()
         return True
 
     def move(self, x_tile_offset, y_tile_offset, ignore_tile_blocking=False,
@@ -85,15 +93,15 @@ class SpriteObject(object):
     A non animated object
     """
 
-    def __init__(self, movable, style, image_folder, image_file, animation_coordinates_in_file,
-                 surface_to_draw=None, surface_memory=None):
+    def __init__(self, style, image_folder, image_file, animation_coordinates_in_file, surface_to_draw=None,
+                 surface_memory=None):
         if image_file:
             if style == Constants.DAWNLIKE_STYLE:
                 self.animation = Util.PygAnimation(
                     [(Constants.DAWNLIKE_IMAGE_RESOURCE_FOLDER + image_folder + os.sep + image_file + ".png",
                       animation_coordinates_in_file, 1.0, Constants.DAWNLIKE_TILE_SIZE, Constants.TILE_SIZE)]
                 )
-        self.movable = movable
+                self.animation.play()
         self.owner = None
 
         self.surface_to_draw = surface_to_draw
@@ -123,11 +131,10 @@ class AnimatedSpriteObject(SpriteObject):
     An animated object
     """
 
-    def __init__(self, movable, style, animation_folder, animation_file, animation_coordinates_in_file,
-                 surface_to_draw=None, surface_memory=None):
+    def __init__(self, style, animation_folder, animation_file, animation_coordinates_in_file, surface_to_draw=None,
+                 surface_memory=None):
         """
         Main constructor
-        :param movable: Define if the object can move or not
         :param style: either Danwlike or Oryx
         :param animation_folder: the subfolder if any
         :param animation_file: the file itself
@@ -137,8 +144,8 @@ class AnimatedSpriteObject(SpriteObject):
         :return:
         """
 
-        super().__init__(movable, style, animation_folder, None, None,
-                         surface_to_draw=surface_to_draw, surface_memory=surface_memory)
+        super().__init__(style, animation_folder, None, None, surface_to_draw=surface_to_draw,
+                         surface_memory=surface_memory)
         if style == Constants.DAWNLIKE_STYLE:
             # Dawnlike settings: 16x16, the first image of the animation is in one file called "0"
             self.animation = Util.PygAnimation(

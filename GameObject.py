@@ -1,3 +1,6 @@
+import Constants
+from Displayable import DisplayableObject, SpriteObject
+
 __author__ = 'Tangil'
 """
 Contains all data regarding the objects
@@ -19,6 +22,7 @@ class GameObject():
     POTION = "potion"
     EQUIPMENT = "equipment"
     BOOK = "book"
+    DECORATION = "decoration"  # only decoration object. Not that some decoration object (like door) can have actions
     # End object type
 
     def __init__(self,
@@ -33,7 +37,6 @@ class GameObject():
                  breakable_parts=None,
                  part_of_inventory=None,
                  displayable_object=None):
-
 
         self.name = name
         self.object_type = object_type
@@ -89,6 +92,11 @@ class GameObject():
     def draw(self):
         if self.displayable_object:
             self.displayable_object.draw()
+
+    def call_action(self, **kwargs):
+        if self.action_when_player:
+            return self.action_when_player(source=self, **kwargs)
+        return True
 
     def __str__(self):
         return self.name
@@ -165,3 +173,72 @@ class UsablePart():
         pass
 
 
+# ----
+# Specific decoration objects - doors and other
+# ---
+
+
+class Door(GameObject):
+    ORIENTATION_HORIZONTAL = "horizontal"
+    ORIENTATION_VERTICAL = "vertical"
+
+    def __init__(self, town, orientation, position_on_tile, closed=False, locked=None, style=Constants.DEFAUlT_STYLE):
+
+        super().__init__("Door",
+                         GameObject.DECORATION,
+                         action_when_player=door_open,
+                         displayable_object=DisplayableObject(
+                             town=town,
+                             movable=False,
+                             blocking=False,
+                             position_on_tile=position_on_tile,
+                             graphical_representation=Door.get_graphical_rep(style, orientation, closed, locked),
+                             delayed_register=True)
+        )
+        self.locked = locked
+        self.style = style
+        self.orientation = orientation
+        self.closed = closed
+
+    @staticmethod
+    def get_graphical_rep(style, orientation, closed, locked):
+        graphical_rep = None
+        assert style == Constants.DAWNLIKE_STYLE, "Door style Oryx not implemented!"
+
+        if style == Constants.DAWNLIKE_STYLE:
+            if orientation == Door.ORIENTATION_HORIZONTAL:
+                if closed:
+                    if locked:
+                        return SpriteObject(style, "Objects", "Door0", (32, 0))
+                    return SpriteObject(style, "Objects", "Door0", (0, 0))
+                else:
+                    return SpriteObject(style, "Objects", "Door1", (0, 0))
+            else:
+                if closed:
+                    if locked:
+                        return SpriteObject(style, "Objects", "Door0", (48, 0))
+                    return SpriteObject(style, "Objects", "Door0", (16, 0))
+                else:
+                    return SpriteObject(style, "Objects", "Door1", (16, 0))
+
+
+def door_open(**kwargs):
+    if kwargs["source"].closed:
+        Util.Event("This door is closed")
+        kwargs["source"].closed = False
+
+        draw = kwargs["source"].displayable_object.graphical_representation.surface_to_draw
+        memory = kwargs["source"].displayable_object.graphical_representation.surface_memory
+
+        kwargs["source"].displayable_object.set_graphical_representation(Door.get_graphical_rep(
+            kwargs["source"].style,
+            kwargs["source"].orientation,
+            kwargs["source"].closed,
+            kwargs["source"].locked
+        ))
+        kwargs["source"].displayable_object.graphical_representation.set_surface(draw, memory)
+        Util.Event("This door is now open")
+        return True
+    else:
+        Util.Event("This door is already open")
+        return True

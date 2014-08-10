@@ -1,23 +1,31 @@
 __author__ = 'Tangil'
 
-
 import random
 import sys
-import Constants
-import pygame
 import time
+
+import pygame
+
+import Constants
+
 
 # http://www.roguebasin.com/index.php?title=Markov_chains_name_generator_in_Python
 
 # from http://www.geocities.com/anvrill/names/cc_goth.html
-PLACES = ['Adara', 'Adena', 'Adrianne', 'Alarice', 'Alvita', 'Amara', 'Ambika', 'Antonia', 'Araceli', 'Balandria', 'Basha',
-'Beryl', 'Bryn', 'Callia', 'Caryssa', 'Cassandra', 'Casondrah', 'Chatha', 'Ciara', 'Cynara', 'Cytheria', 'Dabria', 'Darcei',
-'Deandra', 'Deirdre', 'Delores', 'Desdomna', 'Devi', 'Dominique', 'Drucilla', 'Duvessa', 'Ebony', 'Fantine', 'Fuscienne',
-'Gabi', 'Gallia', 'Hanna', 'Hedda', 'Jerica', 'Jetta', 'Joby', 'Kacila', 'Kagami', 'Kala', 'Kallie', 'Keelia', 'Kerry',
-'Kerry-Ann', 'Kimberly', 'Killian', 'Kory', 'Lilith', 'Lucretia', 'Lysha', 'Mercedes', 'Mia', 'Maura', 'Perdita', 'Quella',
-'Riona', 'Safiya', 'Salina', 'Severin', 'Sidonia', 'Sirena', 'Solita', 'Tempest', 'Thea', 'Treva', 'Trista', 'Vala', 'Winta']
+PLACES = ['Adara', 'Adena', 'Adrianne', 'Alarice', 'Alvita', 'Amara', 'Ambika', 'Antonia', 'Araceli', 'Balandria',
+          'Basha',
+          'Beryl', 'Bryn', 'Callia', 'Caryssa', 'Cassandra', 'Casondrah', 'Chatha', 'Ciara', 'Cynara', 'Cytheria',
+          'Dabria', 'Darcei',
+          'Deandra', 'Deirdre', 'Delores', 'Desdomna', 'Devi', 'Dominique', 'Drucilla', 'Duvessa', 'Ebony', 'Fantine',
+          'Fuscienne',
+          'Gabi', 'Gallia', 'Hanna', 'Hedda', 'Jerica', 'Jetta', 'Joby', 'Kacila', 'Kagami', 'Kala', 'Kallie', 'Keelia',
+          'Kerry',
+          'Kerry-Ann', 'Kimberly', 'Killian', 'Kory', 'Lilith', 'Lucretia', 'Lysha', 'Mercedes', 'Mia', 'Maura',
+          'Perdita', 'Quella',
+          'Riona', 'Safiya', 'Salina', 'Severin', 'Sidonia', 'Sirena', 'Solita', 'Tempest', 'Thea', 'Treva', 'Trista',
+          'Vala', 'Winta']
 
-###############################################################################
+# ##############################################################################
 # Markov Name model
 # A random name generator, by Peter Corbett
 # http://www.pick.ucam.org/~ptc24/mchain.html
@@ -26,7 +34,6 @@ PLACES = ['Adara', 'Adena', 'Adrianne', 'Alarice', 'Alvita', 'Amara', 'Ambika', 
 
 
 class Mdict:
-
     def __init__(self):
         self.d = {}
 
@@ -42,7 +49,7 @@ class Mdict:
         else:
             self.d[prefix] = [suffix]
 
-    def get_suffix(self,prefix):
+    def get_suffix(self, prefix):
         l = self[prefix]
         return random.choice(l)
 
@@ -51,7 +58,8 @@ class MName:
     """
     A name from a Markov chain
     """
-    def __init__(self, chainlen = 2):
+
+    def __init__(self, chainlen=2):
         """
         Building the dictionary
         """
@@ -67,9 +75,9 @@ class MName:
             l = l.strip()
             oldnames.append(l)
             s = " " * chainlen + l
-            for n in range(0,len(l)):
-                self.mcd.add_key(s[n:n+chainlen], s[n+chainlen])
-            self.mcd.add_key(s[len(l):len(l)+chainlen], "\n")
+            for n in range(0, len(l)):
+                self.mcd.add_key(s[n:n + chainlen], s[n + chainlen])
+            self.mcd.add_key(s[len(l):len(l) + chainlen], "\n")
 
     def new(self):
         """
@@ -88,15 +96,13 @@ class MName:
         return name.capitalize()
 
 
-
 class Event(object):
-
     def __init__(self, message):
         # Custom message
         pygame.event.post(pygame.event.Event(Constants.DISPLAY_EVENT, message=message))
 
-class DebugEvent(object):
 
+class DebugEvent(object):
     def __init__(self, message):
         # Custom message
         pygame.event.post(pygame.event.Event(Constants.DEBUG_EVENT, message=message))
@@ -110,7 +116,7 @@ class DebugEvent(object):
 # This will make the all list serahces to become extremely more optimized.
 
 class Path:
-    def __init__(self,nodes, totalCost):
+    def __init__(self, nodes, totalCost):
         self.nodes = nodes;
         self.totalCost = totalCost;
 
@@ -120,13 +126,14 @@ class Path:
     def getTotalMoveCost(self):
         return self.totalCost
 
+
 class Node:
-    def __init__(self,location,mCost,lid,parent=None):
-        self.location = location # where is this node located
-        self.mCost = mCost # total move cost to reach this node
-        self.parent = parent # parent node
-        self.score = 0 # calculated score for this node
-        self.lid = lid # set the location id - unique for each location in the map
+    def __init__(self, location, mCost, lid, parent=None):
+        self.location = location  # where is this node located
+        self.mCost = mCost  # total move cost to reach this node
+        self.parent = parent  # parent node
+        self.score = 0  # calculated score for this node
+        self.lid = lid  # set the location id - unique for each location in the map
 
     def __eq__(self, n):
         if n.lid == self.lid:
@@ -134,9 +141,9 @@ class Node:
         else:
             return 0
 
-class AStar:
 
-    def __init__(self,maphandler):
+class AStar:
+    def __init__(self, maphandler):
         self.mh = maphandler
 
     def _getBestOpenNode(self):
@@ -145,32 +152,32 @@ class AStar:
             if not bestNode:
                 bestNode = n
             else:
-                if n.score<=bestNode.score:
+                if n.score <= bestNode.score:
                     bestNode = n
         return bestNode
 
-    def _tracePath(self,n):
+    def _tracePath(self, n):
         nodes = [];
         totalCost = n.mCost;
         p = n.parent;
-        nodes.insert(0,n);
+        nodes.insert(0, n);
 
         while 1:
             if p.parent is None:
                 break
 
-            nodes.insert(0,p)
-            p=p.parent
+            nodes.insert(0, p)
+            p = p.parent
 
-        return Path(nodes,totalCost)
+        return Path(nodes, totalCost)
 
-    def _handleNode(self,node,end):
+    def _handleNode(self, node, end):
         i = self.o.index(node.lid)
         self.on.pop(i)
         self.o.pop(i)
         self.c.append(node.lid)
 
-        nodes = self.mh.getAdjacentNodes(node,end)
+        nodes = self.mh.getAdjacentNodes(node, end)
 
         for n in nodes:
             if n.location == end:
@@ -183,7 +190,7 @@ class AStar:
                 # already in open, check if better score
                 i = self.o.index(n.lid)
                 on = self.on[i];
-                if n.mCost<on.mCost:
+                if n.mCost < on.mCost:
                     self.on.pop(i);
                     self.o.pop(i);
                     self.on.append(n);
@@ -195,7 +202,7 @@ class AStar:
 
         return None
 
-    def findPath(self,fromlocation, tolocation):
+    def findPath(self, fromlocation, tolocation):
         self.o = []
         self.on = []
         self.c = []
@@ -207,16 +214,18 @@ class AStar:
         nextNode = fnode
 
         while nextNode is not None:
-            finish = self._handleNode(nextNode,end)
+            finish = self._handleNode(nextNode, end)
             if finish:
                 return self._tracePath(finish)
-            nextNode=self._getBestOpenNode()
+            nextNode = self._getBestOpenNode()
 
         return None
 
+
 class SQ_Location:
     """A simple Square Map Location implementation"""
-    def __init__(self,x,y):
+
+    def __init__(self, x, y):
         self.x = x
         self.y = y
 
@@ -227,10 +236,11 @@ class SQ_Location:
         else:
             return 0
 
+
 class SQ_MapHandler:
     """A simple Square Map implementation"""
 
-    def __init__(self,mapdata,width,height):
+    def __init__(self, mapdata, width, height):
         self.m = mapdata
         self.w = width
         self.h = height
@@ -239,7 +249,7 @@ class SQ_MapHandler:
         """MUST BE IMPLEMENTED"""
         x = location.x
         y = location.y
-        if x<0 or x>=self.w or y<0 or y>=self.h:
+        if x < 0 or x >= self.w or y < 0 or y >= self.h:
             return None
         tile = self.m[(x, y)]
         if tile.blocking:
@@ -248,7 +258,7 @@ class SQ_MapHandler:
         #if d == -1:
         #    return None
         d = 1
-        return Node(location,d,((y*self.w)+x));
+        return Node(location, d, ((y * self.w) + x));
 
     def getAdjacentNodes(self, curnode, dest):
         """MUST BE IMPLEMENTED"""
@@ -257,31 +267,29 @@ class SQ_MapHandler:
         cl = curnode.location
         dl = dest
 
-        n = self._handleNode(cl.x+1,cl.y,curnode,dl.x,dl.y)
+        n = self._handleNode(cl.x + 1, cl.y, curnode, dl.x, dl.y)
         if n: result.append(n)
-        n = self._handleNode(cl.x-1,cl.y,curnode,dl.x,dl.y)
+        n = self._handleNode(cl.x - 1, cl.y, curnode, dl.x, dl.y)
         if n: result.append(n)
-        n = self._handleNode(cl.x,cl.y+1,curnode,dl.x,dl.y)
+        n = self._handleNode(cl.x, cl.y + 1, curnode, dl.x, dl.y)
         if n: result.append(n)
-        n = self._handleNode(cl.x,cl.y-1,curnode,dl.x,dl.y)
+        n = self._handleNode(cl.x, cl.y - 1, curnode, dl.x, dl.y)
         if n: result.append(n)
 
         return result
 
-    def _handleNode(self,x,y,fromnode,destx,desty):
-        n = self.getNode(SQ_Location(x,y))
+    def _handleNode(self, x, y, fromnode, destx, desty):
+        n = self.getNode(SQ_Location(x, y))
         if n is not None:
-            dx = max(x,destx) - min(x,destx)
-            dy = max(y,desty) - min(y,desty)
-            emCost = dx+dy
+            dx = max(x, destx) - min(x, destx)
+            dy = max(y, desty) - min(y, desty)
+            emCost = dx + dy
             n.mCost += fromnode.mCost
-            n.score = n.mCost+emCost
-            n.parent=fromnode
+            n.score = n.mCost + emCost
+            n.parent = fromnode
             return n
 
         return None
-
-
 
 
 # Pyganim (pyganim.py, ver 1)
@@ -321,7 +329,6 @@ SOUTHEAST = 'southeast'
 
 
 class PygAnimation(object):
-
     # A dictionary of already loaded images, indexed by filename.
     loaded_image = {}
 
@@ -354,15 +361,15 @@ class PygAnimation(object):
         # and the transformed sprites are kept in _transformedImages.
         self._transformedImages = []
 
-        self._state = STOPPED # The state is always either PLAYING, PAUSED, or STOPPED
-        self._loop = loop # If True, the animation will keep looping. If False, the animation stops after playing once.
-        self._rate = 1.0 # 2.0 means play the animation twice as fast, 0.5 means twice as slow
-        self._visibility = True # If False, then nothing is drawn when the blit() methods are called
+        self._state = STOPPED  # The state is always either PLAYING, PAUSED, or STOPPED
+        self._loop = loop  # If True, the animation will keep looping. If False, the animation stops after playing once.
+        self._rate = 1.0  # 2.0 means play the animation twice as fast, 0.5 means twice as slow
+        self._visibility = True  # If False, then nothing is drawn when the blit() methods are called
 
-        self._playingStartTime = 0 # the time that the play() function was last called.
-        self._pausedStartTime = 0 # the time that the pause() function was last called.
+        self._playingStartTime = 0  # the time that the play() function was last called.
+        self._pausedStartTime = 0  # the time that the pause() function was last called.
 
-        if frames != '_copy': # ('_copy' is passed for frames by the getCopies() method)
+        if frames != '_copy':  # ('_copy' is passed for frames by the getCopies() method)
             self.numFrames = len(frames)
             assert self.numFrames > 0, 'Must contain at least one frame.'
             for i in range(self.numFrames):
@@ -370,7 +377,8 @@ class PygAnimation(object):
                 frame = frames[i]
                 #assert type(frame) in (list, tuple) and len(frame) == 2 or 5, 'Frame %s has incorrect format.' % (i)
                 assert type(frame) in (list, tuple) and len(frame) == 5, 'Frame %s has incorrect format.' % (i)
-                assert type(frame[0]) in (str, pygame.Surface), 'Frame %s image must be a string filename or a pygame.Surface' % (i)
+                assert type(frame[0]) in (
+                str, pygame.Surface), 'Frame %s image must be a string filename or a pygame.Surface' % (i)
                 if len(frame) == 2:
                     assert frame[1] > 0, 'Frame %s duration must be greater than zero.' % (i)
                     if type(frame[0]) == str:
@@ -487,7 +495,7 @@ class PygAnimation(object):
     def makeTransformsPermanent(self):
         self._images = [pygame.Surface(surfObj.get_size(), 0, surfObj) for surfObj in self._transformedImages]
         for i in range(len(self._transformedImages)):
-            self._images[i].blit(self._transformedImages[i], (0,0))
+            self._images[i].blit(self._transformedImages[i], (0, 0))
 
     def blitFrameNum(self, frameNum, destSurface, dest):
         # Draws the specified frame of the animation object. This ignores the
@@ -573,7 +581,7 @@ class PygAnimation(object):
             startTime = time.time()
 
         if self._state == PAUSED:
-            return # do nothing
+            return  # do nothing
         elif self._state == PLAYING:
             self._pausedStartTime = startTime
         elif self._state == STOPPED:
@@ -589,7 +597,7 @@ class PygAnimation(object):
         # stop() is essentially a setter function for self._state
         # NOTE: Don't adjust the self.state property, only self._state
         if self._state == STOPPED:
-            return # do nothing
+            return  # do nothing
         self._state = STOPPED
 
 
@@ -652,12 +660,12 @@ class PygAnimation(object):
         #
         # By default, they are all anchored to the NORTHWEST corner.
         if self.areFramesSameSize():
-            return # nothing needs to be anchored
+            return  # nothing needs to be anchored
             # This check also prevents additional calls to anchor() from doing
             # anything, since anchor() sets all the image to the same size.
             # The lesson is, you can only effectively call anchor() once.
 
-        self.clearTransforms() # clears transforms since this method anchors the original images.
+        self.clearTransforms()  # clears transforms since this method anchors the original images.
 
         maxWidth, maxHeight = self.getMaxSize()
         halfMaxWidth = int(maxWidth / 2)
@@ -666,11 +674,12 @@ class PygAnimation(object):
         for i in range(len(self._images)):
             # go through and copy all frames to a max-sized Surface object
             # NOTE: This makes changes to the original images in self._images, not the transformed images in self._transformedImages
-            newSurf = pygame.Surface((maxWidth, maxHeight)) # TODO: this is probably going to have errors since I'm using the default depth.
+            newSurf = pygame.Surface(
+                (maxWidth, maxHeight))  # TODO: this is probably going to have errors since I'm using the default depth.
 
             # set the expanded areas to be transparent
             newSurf = newSurf.convert_alpha()
-            newSurf.fill((0,0,0,0))
+            newSurf.fill((0, 0, 0, 0))
 
             frameWidth, frameHeight = self._images[i].get_size()
             halfFrameWidth = int(frameWidth / 2)
@@ -725,7 +734,7 @@ class PygAnimation(object):
     def fastForward(self, seconds=None):
         # Set the elapsed time forward relative to the current elapsed time.
         if seconds is None:
-            self.elapsed = self._startTimes[-1] - 0.00002 # done to compensate for rounding errors
+            self.elapsed = self._startTimes[-1] - 0.00002  # done to compensate for rounding errors
         else:
             self.elapsed += seconds
 
@@ -791,7 +800,6 @@ class PygAnimation(object):
             self._transformedImages[i] = pygame.transform.smoothscale(self.getFrame(i), width_height)
 
 
-
     # pygame.Surface method wrappers
     # These wrappers call their analogous pygame.Surface methods on all Surface objects in this animation.
     # They are here for the convenience of the module user. These calls will apply to the transform images,
@@ -846,7 +854,6 @@ class PygAnimation(object):
         self._surfaceMethodWrapper('unlock', *args, **kwargs)
 
 
-
     # Getter and setter methods for properties
     def _propGetRate(self):
         return self._rate
@@ -877,7 +884,7 @@ class PygAnimation(object):
 
     def _propGetState(self):
         if self.isFinished():
-            self._state = STOPPED # if finished playing, then set state to STOPPED.
+            self._state = STOPPED  # if finished playing, then set state to STOPPED.
 
         return self._state
 
@@ -905,7 +912,7 @@ class PygAnimation(object):
 
     def _propSetElapsed(self, elapsed):
         # NOTE: Do to floating point rounding errors, this doesn't work precisely.
-        elapsed += 0.00001 # done to compensate for rounding errors
+        elapsed += 0.00001  # done to compensate for rounding errors
         # TODO - I really need to find a better way to handle the floating point thing.
 
         # Set the elapsed time to a specific value.
@@ -918,7 +925,7 @@ class PygAnimation(object):
         self._playingStartTime = rightNow - (elapsed * self.rate)
 
         if self.state in (PAUSED, STOPPED):
-            self.state = PAUSED # if stopped, then set to paused
+            self.state = PAUSED  # if stopped, then set to paused
             self._pausedStartTime = rightNow
 
 
@@ -947,7 +954,7 @@ class PygAnimation(object):
             elapsed = elapsed % self._startTimes[-1]
         else:
             elapsed = getInBetweenValue(0, elapsed, self._startTimes[-1])
-        elapsed += 0.00001 # done to compensate for rounding errors
+        elapsed += 0.00001  # done to compensate for rounding errors
         return elapsed
 
     elapsed = property(_propGetElapsed, _propSetElapsed)
@@ -964,11 +971,10 @@ class PygAnimation(object):
         if self.loop:
             frameNum = frameNum % len(self._images)
         else:
-            frameNum = getInBetweenValue(0, frameNum, len(self._images)-1)
+            frameNum = getInBetweenValue(0, frameNum, len(self._images) - 1)
         self.elapsed = self._startTimes[frameNum]
 
     currentFrameNum = property(_propGetCurrentFrameNum, _propSetCurrentFrameNum)
-
 
 
 class PygConductor(object):
@@ -1124,8 +1130,8 @@ def findStartTime(startTimes, target):
     # For example, if startTimes was [0, 2, 4.5, 7.3, 10] and target was 6,
     # then findStartTime() would return 2. If target was 12, returns 4.
     assert startTimes[0] == 0
-    lb = 0 # "lb" is lower bound
-    ub = len(startTimes) - 1 # "ub" is upper bound
+    lb = 0  # "lb" is lower bound
+    ub = len(startTimes) - 1  # "ub" is upper bound
 
     # handle special cases:
     if len(startTimes) == 0:
@@ -1137,7 +1143,7 @@ def findStartTime(startTimes, target):
     while True:
         i = int((ub - lb) / 2) + lb
 
-        if startTimes[i] == target or (startTimes[i] < target and startTimes[i+1] > target):
+        if startTimes[i] == target or (startTimes[i] < target and startTimes[i + 1] > target):
             if i == len(startTimes):
                 return i - 1
             else:
