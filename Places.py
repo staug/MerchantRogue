@@ -263,7 +263,7 @@ class Tile(object):
 
 class TileMap(object):
 
-    def __init__(self, size, make_map=False, render_map=False):
+    def __init__(self, size, make_map=False, render_map=False, style=Constants.DAWNLIKE_STYLE):
         self.max_x = size[0]
         self.max_y = size[1]
         self.map = {}
@@ -276,12 +276,12 @@ class TileMap(object):
         if make_map:
             self.make_map()
         if render_map:
-            self.render()
+            self.render(style)
 
     def make_map(self):
         pass
 
-    def render(self):
+    def render(self, style=Constants.DAWNLIKE_STYLE):
         pass
 
     def compute_tile_weight(self, x, y, terrain_type):
@@ -299,7 +299,7 @@ class TileMap(object):
 
 class TownTileMap(TileMap):
 
-    def __init__(self, town, size, make_map=False, render_map=False):
+    def __init__(self, town, size, make_map=False, render_map=False, style=Constants.DAWNLIKE_STYLE):
         super().__init__(size, make_map=False, render_map=False)
 
         self.town = town
@@ -310,7 +310,7 @@ class TownTileMap(TileMap):
         if make_map or render_map:
             self.make_map()
         if render_map:
-            self.render()
+            self.render(style)
 
     def get_place_in_building(self, building_name):
         default = (0, 0)
@@ -527,7 +527,7 @@ class TownTileMap(TileMap):
             for room in room_placed:
                 self.rooms.append(room)
 
-    def render(self):
+    def render(self, style):
 
         def build_floor_tile_dawnlike(source_file, origin_x, origin_y, destination_tile_size):
             file_tile_size = (16, 16)
@@ -636,68 +636,98 @@ class TownTileMap(TileMap):
                 scaled_tile.append(pygame.transform.smoothscale(a_tile, destination_tile_size))
             return scaled_tile
 
-
         if not self.surface_memory:
 
             self.surface_memory = pygame.Surface((self.max_x * Constants.TILE_SIZE[0],
                                                   self.max_y * Constants.TILE_SIZE[1]))
 
-            wall_source_file_d = pygame.image.load(Constants.DAWNLIKE_IMAGE_RESOURCE_FOLDER + 'Objects/Wall.png').convert_alpha()
-            floor_source_file_d = pygame.image.load(Constants.DAWNLIKE_IMAGE_RESOURCE_FOLDER + 'Objects/Floor.png').convert_alpha()
-            door_closed_source_file = pygame.image.load(Constants.DAWNLIKE_IMAGE_RESOURCE_FOLDER + 'Objects/Door0.png').convert_alpha()
+            if style == Constants.DAWNLIKE_STYLE:
+                wall_source_file_d = pygame.image.load(Constants.DAWNLIKE_IMAGE_RESOURCE_FOLDER + 'Objects/Wall.png').convert_alpha()
+                floor_source_file_d = pygame.image.load(Constants.DAWNLIKE_IMAGE_RESOURCE_FOLDER + 'Objects/Floor.png').convert_alpha()
+                door_closed_source_file = pygame.image.load(Constants.DAWNLIKE_IMAGE_RESOURCE_FOLDER + 'Objects/Door0.png').convert_alpha()
 
-            dirt_image = build_floor_tile_dawnlike(floor_source_file_d, 0, 288, Constants.TILE_SIZE)
-            floor_image = build_floor_tile_dawnlike(floor_source_file_d, 112, 288, Constants.TILE_SIZE)
-            grass_image = build_floor_tile_dawnlike(floor_source_file_d, 112, 96, Constants.TILE_SIZE)
-            water_image = build_floor_tile_dawnlike(floor_source_file_d, 224, 288, Constants.TILE_SIZE)
-            rock_image = build_floor_tile_dawnlike(floor_source_file_d, 224, 96, Constants.TILE_SIZE)
-            path_image = build_floor_tile_dawnlike(floor_source_file_d, 0, 96, Constants.TILE_SIZE)
+                dirt_image = build_floor_tile_dawnlike(floor_source_file_d, 0, 288, Constants.TILE_SIZE)
+                floor_image = build_floor_tile_dawnlike(floor_source_file_d, 112, 288, Constants.TILE_SIZE)
+                grass_image = build_floor_tile_dawnlike(floor_source_file_d, 112, 96, Constants.TILE_SIZE)
+                water_image = build_floor_tile_dawnlike(floor_source_file_d, 224, 288, Constants.TILE_SIZE)
+                rock_image = build_floor_tile_dawnlike(floor_source_file_d, 224, 96, Constants.TILE_SIZE)
+                path_image = build_floor_tile_dawnlike(floor_source_file_d, 0, 96, Constants.TILE_SIZE)
 
-            source_file_o = pygame.image.load(Constants.ORYX_IMAGE_RESOURCE_FOLDER + 'oryx_16bit_fantasy_world_trans.png').convert_alpha()
+                wall_image = build_wall_tile_dawnlike(wall_source_file_d, 112, 48, Constants.TILE_SIZE)
 
-            #wall_image = build_wall_tile_dawnlike(wall_source_file_d, 112, 48, Constants.TILE_SIZE)
-            wall_image = build_wall_tile_oryx(source_file_o, 24, 336, Constants.TILE_SIZE)
+                for x in range(self.max_x):
+                    for y in range(self.max_y):
+                        destination_pos = (x * Constants.TILE_SIZE[0], y * Constants.TILE_SIZE[1])
+                        if self.map[(x, y)].floor_type == Tile.GRASS:
+                            self.surface_memory.blit(grass_image[self.compute_tile_weight(x, y, Tile.GRASS)],
+                                                     destination_pos)
+                        elif self.map[(x, y)].floor_type == Tile.WATER:
+                            self.surface_memory.blit(water_image[self.compute_tile_weight(x, y, Tile.WATER)],
+                                                     destination_pos)
+                        elif self.map[(x, y)].floor_type == Tile.ROCK:
+                            self.surface_memory.blit(rock_image[self.compute_tile_weight(x, y, Tile.ROCK)],
+                                                     destination_pos)
+                        elif self.map[(x, y)].floor_type == Tile.WALL:
+                            self.surface_memory.blit(wall_image[self.compute_tile_weight(x, y, Tile.WALL)],
+                                                     destination_pos)
+                        elif self.map[(x, y)].floor_type == Tile.PATH:
+                            self.surface_memory.blit(path_image[self.compute_tile_weight(x, y, Tile.PATH)],
+                                                     destination_pos)
+                        elif self.map[(x, y)].floor_type == Tile.DIRT:
+                            self.surface_memory.blit(dirt_image[self.compute_tile_weight(x, y, Tile.DIRT)],
+                                                     destination_pos)
+                        elif self.map[(x, y)].floor_type == Tile.FLOOR:
+                            self.surface_memory.blit(floor_image[self.compute_tile_weight(x, y, Tile.FLOOR)],
+                                                     destination_pos)
+                        elif self.map[(x, y)].floor_type == Tile.DOOR:
+                            # for a door we do the regular floor, and decorate later
+                            self.surface_memory.blit(floor_image[self.compute_tile_weight(x, y, Tile.FLOOR)],
+                                                     destination_pos)
 
-            for x in range(self.max_x):
-                for y in range(self.max_y):
-                    destination_pos = (x * Constants.TILE_SIZE[0], y * Constants.TILE_SIZE[1])
-                    if self.map[(x, y)].floor_type == Tile.GRASS:
-                        self.surface_memory.blit(grass_image[self.compute_tile_weight(x, y, Tile.GRASS)],
-                                                 destination_pos)
-                    elif self.map[(x, y)].floor_type == Tile.WATER:
-                        self.surface_memory.blit(water_image[self.compute_tile_weight(x, y, Tile.WATER)],
-                                                 destination_pos)
-                    elif self.map[(x, y)].floor_type == Tile.ROCK:
-                        self.surface_memory.blit(rock_image[self.compute_tile_weight(x, y, Tile.ROCK)],
-                                                 destination_pos)
-                    elif self.map[(x, y)].floor_type == Tile.WALL:
-                        self.surface_memory.blit(wall_image[self.compute_tile_weight(x, y, Tile.WALL)],
-                                                 destination_pos)
-                    elif self.map[(x, y)].floor_type == Tile.PATH:
-                        self.surface_memory.blit(path_image[self.compute_tile_weight(x, y, Tile.PATH)],
-                                                 destination_pos)
-                    elif self.map[(x, y)].floor_type == Tile.DIRT:
-                        self.surface_memory.blit(dirt_image[self.compute_tile_weight(x, y, Tile.DIRT)],
-                                                 destination_pos)
-                    elif self.map[(x, y)].floor_type == Tile.FLOOR:
-                        self.surface_memory.blit(floor_image[self.compute_tile_weight(x, y, Tile.FLOOR)],
-                                                 destination_pos)
-                    elif self.map[(x, y)].floor_type == Tile.DOOR:
-                        # for a door we do the regular floor, and decorate later
-                        self.surface_memory.blit(floor_image[self.compute_tile_weight(x, y, Tile.FLOOR)],
-                                                 destination_pos)
-
-                    # Now add the decoration...
-                    if self.map[(x, y)].decoration_type:
-                        if self.map[(x, y)].decoration_type == Tile.DOOR:
-                            # TODO Change as doors needs to be drawn like regular object!
-                            if self.map[(x, y)].characteristics["orientation"] == "horizontal":
-                                self.surface_memory.blit(door_closed_source_file.subsurface(pygame.Rect((0,0), (16,16))),
-                                                 destination_pos)
+                        # Now add the decoration...
+                        if self.map[(x, y)].decoration_type:
+                            if self.map[(x, y)].decoration_type == Tile.DOOR:
+                                # TODO Change as doors needs to be drawn like regular object!
+                                if self.map[(x, y)].characteristics["orientation"] == "horizontal":
+                                    self.surface_memory.blit(door_closed_source_file.subsurface(pygame.Rect((0,0), (16,16))),
+                                                     destination_pos)
+                                else:
+                                    self.surface_memory.blit(door_closed_source_file.subsurface(pygame.Rect((16,0), (16,16))),
+                                                     destination_pos)
                             else:
-                                self.surface_memory.blit(door_closed_source_file.subsurface(pygame.Rect((16,0), (16,16))),
-                                                 destination_pos)
-                        else:
-                            Player.DisplayableObject(self.town, movable=False, position_on_tile=(x,y),
-                                                     graphical_representation=Player.AnimatedSpriteObject(False, Constants.DAWNLIKE_STYLE, "Objects", self.map[(x, y)].decoration_type[0], self.map[(x, y)].decoration_type[2]),
-                                                     surface_to_draw=self.surface_memory, surface_memory=self.surface_memory).draw()
+                                Player.DisplayableObject(self.town, movable=False, position_on_tile=(x,y),
+                                                         graphical_representation=Player.AnimatedSpriteObject(False, style, "Objects", self.map[(x, y)].decoration_type[0], self.map[(x, y)].decoration_type[2]),
+                                                         surface_to_draw=self.surface_memory, surface_memory=self.surface_memory).draw()
+            else:
+                source_file_o = pygame.image.load(Constants.ORYX_IMAGE_RESOURCE_FOLDER + 'oryx_16bit_fantasy_world_trans.png').convert_alpha()
+                water_image = rock_image = dirt_image = path_image = floor_image = grass_image = build_floor_tile_oryx(source_file_o, 696, 384, Constants.TILE_SIZE)
+                wall_image = build_wall_tile_oryx(source_file_o, 24, 336, Constants.TILE_SIZE)
+
+                for x in range(self.max_x):
+                    for y in range(self.max_y):
+                        destination_pos = (x * Constants.TILE_SIZE[0], y * Constants.TILE_SIZE[1])
+                        if self.map[(x, y)].floor_type == Tile.GRASS:
+                            self.surface_memory.blit(grass_image[self.compute_tile_weight(x, y, Tile.GRASS)],
+                                                     destination_pos)
+                        elif self.map[(x, y)].floor_type == Tile.WATER:
+                            self.surface_memory.blit(water_image[self.compute_tile_weight(x, y, Tile.WATER)],
+                                                     destination_pos)
+                        elif self.map[(x, y)].floor_type == Tile.ROCK:
+                            self.surface_memory.blit(rock_image[self.compute_tile_weight(x, y, Tile.ROCK)],
+                                                     destination_pos)
+                        elif self.map[(x, y)].floor_type == Tile.WALL:
+                            self.surface_memory.blit(wall_image[self.compute_tile_weight(x, y, Tile.WALL)],
+                                                     destination_pos)
+                        elif self.map[(x, y)].floor_type == Tile.PATH:
+                            self.surface_memory.blit(path_image[self.compute_tile_weight(x, y, Tile.PATH)],
+                                                     destination_pos)
+                        elif self.map[(x, y)].floor_type == Tile.DIRT:
+                            self.surface_memory.blit(dirt_image[self.compute_tile_weight(x, y, Tile.DIRT)],
+                                                     destination_pos)
+                        elif self.map[(x, y)].floor_type == Tile.FLOOR:
+                            self.surface_memory.blit(floor_image[self.compute_tile_weight(x, y, Tile.FLOOR)],
+                                                     destination_pos)
+                        elif self.map[(x, y)].floor_type == Tile.DOOR:
+                            # for a door we do the regular floor, and decorate later
+                            self.surface_memory.blit(floor_image[self.compute_tile_weight(x, y, Tile.FLOOR)],
+                                                     destination_pos)

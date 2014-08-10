@@ -15,9 +15,9 @@ DAWNLIKE_TILE_SIZE = (16, 16)
 
 ORYX_IMAGE_RESOURCE_FOLDER = str(os.curdir + os.sep + "resources" + os.sep + "img" + os.sep + "Oryx_Megapack" + os.sep)
 ORYX_STYLE = "DAWNLIKE"
-ORYX_TILE_SIZE = (16, 16)
+ORYX_TILE_SIZE = (24, 24)
 
-TILE_SIZE = (32, 32)
+TILE_SIZE = (16, 16)
 
 DISPLAY_EVENT = USEREVENT + 1
 DEBUG_EVENT = USEREVENT + 2
