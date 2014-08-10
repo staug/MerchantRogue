@@ -1,3 +1,7 @@
+from Displayable import DisplayableObject
+from Displayable import AnimatedSpriteObject
+from GameObject import GameObject
+
 __author__ = 'Tangil'
 
 import planes
@@ -36,7 +40,7 @@ class Game():
 
         Util.DebugEvent("Setting up player")
         GameData.player = Player.Player(GameData.current_town,
-                           graphical_representation=Player.AnimatedSpriteObject(True, Constants.DAWNLIKE_STYLE,
+                                        graphical_representation=AnimatedSpriteObject(True, Constants.DAWNLIKE_STYLE,
                                                                                 "Characters", "Player", (0, 0)),
                            position_on_tile=GameData.current_town.tile_map.default_start_player_position,)
 
@@ -51,14 +55,42 @@ class Game():
                 #                        graphical_representation=Player.AnimatedSpriteObject(True, "Characters", "Player", coordinates))
                 npc = Player.NonPlayableCharacter(town,
                                        position_on_tile=(i * 1, i * 2),
-                                       graphical_representation=Player.AnimatedSpriteObject(True, Constants.DAWNLIKE_STYLE, "Characters", "Player", coordinates))
+                                       graphical_representation=AnimatedSpriteObject(True, Constants.DAWNLIKE_STYLE,
+                                                                                     "Characters", "Player",
+                                                                                     coordinates))
 
                 town.npc_list.append(npc)
 
             for i in range(25):
-                an_object = Player.GameObject("A leftover object", town, position_on_tile=(random.randint(0, town.tile_map.max_x - 1), random.randint(0, town.tile_map.max_y - 1)),
-                                              graphical_representation = Player.AnimatedSpriteObject(False, Constants.DAWNLIKE_STYLE, "Objects", "Ground", (16, 48)),
-                                              delayed_register=True)
+                """
+                 name,
+                 object_type,
+                 weight=None,
+                 volume=None,
+                 regular_value=None,
+                 action_when_player=None,
+                 equipment=None,
+                 usable_part=None,
+                 breakable_parts=None,
+                 part_of_inventory=None,
+                 displayable_object=None):
+                """
+
+                an_object = GameObject("A leftover object",
+                                       GameObject.JUNK,
+                                       weight=random.randint(1, 10),
+                                       volume=random.randint(1, 5),
+                                       regular_value=random.randint(2, 10),
+                                       displayable_object=DisplayableObject(town=town,
+                                                                            movable=False,
+                                                                            blocking=False,
+                                                                            position_on_tile=(
+                                                                            random.randint(0, town.tile_map.max_x - 1),
+                                                                            random.randint(0, town.tile_map.max_y - 1)),
+                                                                            graphical_representation=AnimatedSpriteObject(
+                                                                                False, Constants.DAWNLIKE_STYLE,
+                                                                                "Objects", "Ground", (16, 48)),
+                                                                            delayed_register=True))
                 town.game_object_list.append(an_object)
 
 
@@ -76,7 +108,7 @@ class Game():
                 for npc in a_town.npc_list:
                     npc.graphical_representation.set_surface(surface_to_draw, surface_memory)
                 for an_object in a_town.game_object_list:
-                    an_object.graphical_representation.set_surface(surface_to_draw, surface_memory)
+                    an_object.displayable_object.graphical_representation.set_surface(surface_to_draw, surface_memory)
 
     @classmethod
     def save_game(cls, file_name):

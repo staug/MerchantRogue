@@ -6,6 +6,7 @@ An object may contain breakable parts - for crafting purposes
 An object may contain a usable part - this creates temporary or permanent boost, such as potions or others.
 """
 import random
+
 import Util
 
 
@@ -23,25 +24,29 @@ class GameObject():
     def __init__(self,
                  name,
                  object_type,
-                 blocking=False,
                  weight=None,
                  volume=None,
                  regular_value=None,
                  action_when_player=None,
                  equipment=None,
                  usable_part=None,
-                 graphical_representation=None,
                  breakable_parts=None,
-                 part_of_inventory=None):
+                 part_of_inventory=None,
+                 displayable_object=None):
+
 
         self.name = name
         self.object_type = object_type
-        self.blocking = blocking
-        self.graphical_representation = graphical_representation
         self.equipment = equipment
         self.breakable_parts = breakable_parts
         self.part_of_inventory = part_of_inventory
         self.usable_part = usable_part
+        self.displayable_object = displayable_object
+        if displayable_object:
+            self.blocking = displayable_object.blocking
+            self.movable = displayable_object.movable
+        else:
+            self.blocking = self.movable = False
 
         if weight:
             self.weight = weight
@@ -82,8 +87,8 @@ class GameObject():
         pass
 
     def draw(self):
-        if self.graphical_representation:
-            self.graphical_representation.draw()
+        if self.displayable_object:
+            self.displayable_object.draw()
 
     def __str__(self):
         return self.name
@@ -158,3 +163,5 @@ class UsablePart():
         # plan to use alo the validity: if validity = -1, then
         Util.Event("Unuse function not implemented...")
         pass
+
+

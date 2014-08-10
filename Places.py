@@ -1,3 +1,6 @@
+from Displayable import DisplayableObject, AnimatedSpriteObject
+from GameObject import GameObject
+
 __author__ = 'Tangil'
 """
 Town, places and other map functions
@@ -6,7 +9,6 @@ Town, places and other map functions
 
 import random
 import Util
-import Player
 import pygame
 import Constants
 
@@ -39,7 +41,9 @@ class TradingPost(Building):
         self.name = Building.TRADING_POST
 
         self.gold = random.randint(1, 200)
-        self.goods_available = [Player.GameObject(Util.MName().new(), town, delayed_register=True)
+        self.goods_available = [
+            GameObject(Util.MName().new(), GameObject.JUNK, weight=random.randint(1, 10), volume=random.randint(1, 5),
+                       regular_value=random.randint(2, 10), displayable_object=None)
                                 for x in range(random.randint(1, 5))]
 
         self.decoration_list = {
@@ -695,8 +699,12 @@ class TownTileMap(TileMap):
                                     self.surface_memory.blit(door_closed_source_file.subsurface(pygame.Rect((16,0), (16,16))),
                                                      destination_pos)
                             else:
-                                Player.DisplayableObject(self.town, movable=False, position_on_tile=(x,y),
-                                                         graphical_representation=Player.AnimatedSpriteObject(False, style, "Objects", self.map[(x, y)].decoration_type[0], self.map[(x, y)].decoration_type[2]),
+                                DisplayableObject(self.town, movable=False, position_on_tile=(x, y),
+                                                  graphical_representation=AnimatedSpriteObject(False, style, "Objects",
+                                                                                                self.map[(
+                                                                                                x, y)].decoration_type[
+                                                                                                    0], self.map[(
+                                                      x, y)].decoration_type[2]),
                                                          surface_to_draw=self.surface_memory, surface_memory=self.surface_memory).draw()
             else:
                 source_file_o = pygame.image.load(Constants.ORYX_IMAGE_RESOURCE_FOLDER + 'oryx_16bit_fantasy_world_trans.png').convert_alpha()
