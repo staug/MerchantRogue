@@ -1162,6 +1162,9 @@ class Stats:
 #
 STATS = Stats()
 
+# --------------------------------------------------------------------------------------------
+# Specific added modif go there!
+# -------------------------------------------------------------------------------------------
 
 class ImagePlane(Plane):
 
@@ -1229,9 +1232,160 @@ class ImagePlane(Plane):
             self.rendersurface.blit(subplane.rendersurface, subplane.rect)
         return True
 
-        # def sub(self, plane):
-
-    #        raise Exception("Cannot sub an image!")
-
     def clicked(self, button_name):
         print("click!")
+
+
+class ScaledSurface:
+    IMAGE_DICT = {}
+
+    @staticmethod
+    def render(target_dimension, image_source_filename, image_corner_dimension=(10, 10), top=10, bottom=10, left=10,
+               right=10, use_max_width=True, use_max_height=True):
+        """
+        Auto adjust a rectangular image (like a button) to a given dimension by cutting its to pieces.
+        :param target_dimension: a tuple (width, height) for the target image
+        :param image_source_filename: the complete path and filename (including folder) for the source image
+        :param image_corner_dimension: a tuple describing the corner size of the image - default (10, 10)
+        :param top: which part of the image is copied over, starting top left corner.
+        :param bottom: which part of the image is copied over, starting bottom left corner.
+        :param left: which left part of the image is copied over, starting top left corner.
+        :param right: which right part of the image is copied over, starting top right corner.
+        :return: a surface with the correct background
+        """
+
+        (width, height) = target_dimension
+        (image_source_corner_size_width, image_source_corner_size_height) = image_corner_dimension
+
+        if image_source_filename not in ScaledSurface.IMAGE_DICT.keys():
+            ScaledSurface.IMAGE_DICT[image_source_filename] = pygame.image.load(image_source_filename).convert_alpha()
+
+        image_source = ScaledSurface.IMAGE_DICT[image_source_filename]
+        surface = pygame.Surface((width, height), pygame.SRCALPHA)
+
+        if use_max_width:
+            top = bottom = image_source.get_rect().width - 2 * image_source_corner_size_width
+        if use_max_height:
+            right = left = image_source.get_rect().height - 2 * image_source_corner_size_height
+
+        # Fill the surface
+        surface.fill(image_source.get_at(image_source.get_rect().center),
+                     rect=pygame.Rect(image_source_corner_size_width,
+                                      image_source_corner_size_height,
+                                      width - 2 * image_source_corner_size_width,
+                                      height - 2 * image_source_corner_size_height))
+        # Fill the corners
+        surface.blit(image_source, (0, 0, 1, 1),
+                     area=((0, 0),
+                           (image_source_corner_size_width, image_source_corner_size_height)))
+        surface.blit(image_source, (0, height - image_source_corner_size_height, 1, 1),
+                     area=((0, image_source.get_rect().height - image_source_corner_size_height),
+                           (image_source_corner_size_width, image_source_corner_size_height)))
+        surface.blit(image_source, (width - image_source_corner_size_width, 0, 1, 1),
+                     area=((image_source.get_rect().width - image_source_corner_size_width, 0),
+                           (image_source_corner_size_width, image_source_corner_size_height)))
+        surface.blit(image_source, (width - image_source_corner_size_width,
+                                    height - image_source_corner_size_height, 1, 1),
+                     area=((image_source.get_rect().width - image_source_corner_size_width,
+                            image_source.get_rect().height - image_source_corner_size_height),
+                           (image_source_corner_size_width, image_source_corner_size_height)))
+
+        # Finish with the border
+        top_extract = image_source.subsurface(image_source_corner_size_width, 0,
+                                              top, image_source_corner_size_height)
+        number_fill_top = int((width - image_source_corner_size_width * 2) / top)
+        rest_fill_top = (width - image_source_corner_size_width * 2) % top
+        for x_index in range(number_fill_top):
+            surface.blit(top_extract, (x_index * top + image_source_corner_size_width, 0, 1, 1))
+        rest_extract = image_source.subsurface(image_source_corner_size_width, 0,
+                                               rest_fill_top, image_source_corner_size_height)
+        surface.blit(rest_extract, (width - image_source_corner_size_width - rest_fill_top, 0, 1, 1))
+
+        bottom_extract = image_source.subsurface(image_source_corner_size_width,
+                                                 image_source.get_rect().height -
+                                                 image_source_corner_size_height,
+                                                 bottom, image_source_corner_size_height)
+        number_fill_bottom = int((width - image_source_corner_size_width * 2) / bottom)
+        rest_fill_bottom = (width - image_source_corner_size_width * 2) % bottom
+        for x_index in range(number_fill_bottom):
+            surface.blit(bottom_extract, (x_index * bottom + image_source_corner_size_width,
+                                          height - image_source_corner_size_height, 1, 1))
+        rest_extract = image_source.subsurface(image_source_corner_size_width,
+                                               image_source.get_rect().height - image_source_corner_size_height,
+                                               rest_fill_bottom, image_source_corner_size_height)
+        surface.blit(rest_extract, (width - image_source_corner_size_width - rest_fill_bottom,
+                                    height - image_source_corner_size_height, 1, 1))
+
+        left_extract = image_source.subsurface(0, image_source_corner_size_height,
+                                               image_source_corner_size_width, left)
+        number_fill_left = int((height - image_source_corner_size_height * 2) / left)
+        rest_fill_left = (height - image_source_corner_size_height * 2) % left
+        for y_index in range(number_fill_left):
+            surface.blit(left_extract, (0, y_index * left + image_source_corner_size_height, 1, 1))
+        rest_extract = image_source.subsurface(0, image_source_corner_size_height,
+                                               image_source_corner_size_width, rest_fill_left)
+        surface.blit(rest_extract, (0, height - image_source_corner_size_height - rest_fill_left, 1, 1))
+
+        right_extract = image_source.subsurface(image_source.get_rect().width -
+                                                image_source_corner_size_width,
+                                                image_source_corner_size_height,
+                                                image_source_corner_size_width,
+                                                right)
+        number_fill_right = int((height - image_source_corner_size_height * 2) / right)
+        rest_fill_right = (height - image_source_corner_size_height * 2) % right
+        for y_index in range(number_fill_right):
+            surface.blit(right_extract,
+                         (width - image_source_corner_size_width,
+                          y_index * right + image_source_corner_size_height, 1, 1))
+        rest_extract = image_source.subsurface(image_source.get_rect().width - image_source_corner_size_width,
+                                               image_source_corner_size_height,
+                                               image_source_corner_size_width,
+                                               rest_fill_right)
+        surface.blit(rest_extract, (width - image_source_corner_size_width,
+                                    height - image_source_corner_size_height - rest_fill_right, 1, 1))
+        return surface
+
+
+class IncludedSurface:
+    """
+    Utility class to create a border effect by putting several images one into another.
+    """
+
+    @staticmethod
+    def build(target_dimension, list_image, list_corner_tuples=None, list_internal_margin=None):
+        """
+
+        :param target_dimension: a tuple (width, height) for the target image
+        :param list_image: list of filenames (including folder) for the image
+        :param list_corner_tuples: list of tuples describing the corner size of the image - default (10, 10)
+        :param list_internal_margin: list of tuples (left, top, right, bottom) describing which part of the image
+        is copied over.
+        :return: a surface with the correct background
+        """
+        (width, height) = target_dimension
+
+        if list_corner_tuples:
+            surface = ScaledSurface((width, height), list_image[0], list_corner_tuples[0]).surface
+        else:
+            surface = ScaledSurface((width, height), list_image[0]).surface
+
+        current_top_pos = (0, 0)
+        current_size = (width, height)
+        new_surface = None
+
+        for x in range(1, len(list_image)):
+            if list_internal_margin:
+                current_size = (current_size[0] - list_internal_margin[x - 1][0] - list_internal_margin[x - 1][2],
+                                current_size[1] - list_internal_margin[x - 1][1] - list_internal_margin[x - 1][3])
+                current_top_pos = (current_top_pos[0] + list_internal_margin[x - 1][0],
+                                   current_top_pos[0] + list_internal_margin[x - 1][1])
+            else:
+                # assume internal_margin of 10
+                current_size = (current_size[0] - 20, current_size[1] - 20)
+                current_top_pos = (current_top_pos[0] + 10, current_top_pos[0] + 10)
+            if list_corner_tuples:
+                new_surface = ScaledSurface(current_size, list_image[x], list_corner_tuples[x]).surface
+            else:
+                new_surface = ScaledSurface(current_size, list_image[x]).surface
+            surface.blit(new_surface, (current_top_pos[0], current_top_pos[1]))
+        return surface
