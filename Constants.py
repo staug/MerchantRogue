@@ -8,8 +8,9 @@ import os
 from pygame.locals import USEREVENT
 
 
-GAME_WINDOW_SIZE = (1024, 768)
-PLACE_WINDOW_SIZE = (640, 480)
+GAME_WINDOW_SIZE = (600, 600)
+# PLACE_WINDOW_SIZE = (640, 480)
+PLACE_WINDOW_SIZE = GAME_WINDOW_SIZE
 
 DAWNLIKE_IMAGE_RESOURCE_FOLDER = str(os.curdir + os.sep + "resources" + os.sep + "img" + os.sep + "Dawnlike" + os.sep)
 DAWNLIKE_STYLE = "DAWNLIKE"

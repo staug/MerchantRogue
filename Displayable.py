@@ -64,9 +64,7 @@ class DisplayableObject(object):
                 Util.Event("Illegal move to {}".format(new_tile_position))
             return False
         # Test to know if any objects with callbacks are in the new position
-        print("New tile position: " + str(new_tile_position))
         for an_object in self.town.tile_map.map[new_tile_position].object_on_tile:
-            print("OBJecT THERE")
             if not an_object.call_action():
                 Util.Event("The object at {} prevented the move".format(new_tile_position))
                 return False
@@ -75,7 +73,6 @@ class DisplayableObject(object):
         self.town.tile_map.map[self.position_on_tile].unregister_object(self)
         self.position_on_tile = new_tile_position
         self.town.tile_map.map[self.position_on_tile].register_object(self)
-        # self.town.tile_map.map[self.position_on_tile].call_action()
         return True
 
     def move(self, x_tile_offset, y_tile_offset, ignore_tile_blocking=False,

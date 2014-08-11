@@ -154,12 +154,20 @@ if __name__ == '__main__':
     screen.sub(main_image)
     main_image.set_camera(Constants.PLACE_WINDOW_SIZE)
     main_image.move_camera_tile_center(GameData.player.position_on_tile)
+    main_image.draggable = False
+    main_image.grab = True
     Game.assign_surface_to_displayable_objects(GameData.current_town,
                                                        main_image.image,
                                                        GameData.current_town.tile_map.surface_memory)
 
     # END INITIALIZATION
     print("All objects init done - starting main loop")
+
+    # Test
+    amessage = planes.gui.tmb.TMBOkBox("This is a long messages. I don't know how it will be split")
+    amessage.draggable = True
+    amessage.grab = False
+    screen.sub(amessage)
 
     while True:
 

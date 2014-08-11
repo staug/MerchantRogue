@@ -26,9 +26,11 @@
 # TODO: Planes *so* needs live performance reporting. Maybe not via log file, but as some sort of a live display via TTY or socket.
 # TODO: replace Plane.subplanes and Planes.subplanes_list with collections.OrderedDict and OrderedDict.keys()?
 
-import pygame
 import time
 import random
+
+import pygame
+
 
 VERSION = "0.6.1a"
 
@@ -1222,10 +1224,14 @@ class ImagePlane(Plane):
         if self.camera_rect:
             self.rendersurface.blit(self.image, (0,0), area=self.camera_rect)
         self.last_image_id = id(self.image)
+
+        for subplane in (self.subplanes[name] for name in self.subplanes_list):
+            self.rendersurface.blit(subplane.rendersurface, subplane.rect)
         return True
 
-    def sub(self):
-        raise Exception("Cannot sub an image!")
+        # def sub(self, plane):
+
+    #        raise Exception("Cannot sub an image!")
 
     def clicked(self, button_name):
         print("click!")
