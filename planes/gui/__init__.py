@@ -617,7 +617,7 @@ class Button(Label):
 
         return
 
-    def clicked(self, button_name):
+    def clicked(self, button_name, event=None):
         """Plane standard method, called when there is a MOUSEDOWN event on this plane.
            Changes the Button color for some frames and calls the base class implementation.
         """
@@ -634,7 +634,7 @@ class Button(Label):
 
         # Call base class implementation which will call the callback
         #
-        Label.clicked(self, button_name)
+        Label.clicked(self, button_name, event=event)
 
         return
 
@@ -952,7 +952,7 @@ class OkBox(Container):
 
         return
 
-    def ok(self, plane):
+    def ok(self, plane, event=None):
         """Button clicked callback which destroys the OkBox.
         """
 

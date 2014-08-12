@@ -15,7 +15,7 @@ import Util
 from pygame.locals import *
 import Constants
 import GameData
-
+import GuiElements
 
 def bing(*args):
     pass
@@ -148,7 +148,7 @@ if __name__ == '__main__':
     Game.start_new_game(20)
 
     # Step 3 - Finish the graphical init for this town.
-    main_image = planes.ImagePlane("Main Image", pygame.Rect((0, 0), Constants.PLACE_WINDOW_SIZE), Constants.TILE_SIZE,
+    main_image = GuiElements.ImagePlane("Main Image", pygame.Rect((0, 0), Constants.PLACE_WINDOW_SIZE), Constants.TILE_SIZE,
                                    image_size=GameData.current_town.tile_map.surface_memory.get_rect().size)
     main_image.image.blit(GameData.current_town.tile_map.surface_memory, (0, 0))
     screen.sub(main_image)
@@ -171,7 +171,7 @@ if __name__ == '__main__':
 
     pygame.mouse.set_cursor(*pygame.cursors.diamond)
 
-    screen.sub(planes.KenneyLabel("testname", (150, 24), "test"))
+    screen.sub(GuiElements.KenneyOKLabel("This is a very very long message.\nI test wrapper.\nAgain a very very long sentecne that never ends\nShort.", style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
 
     while True:
 

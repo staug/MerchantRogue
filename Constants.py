@@ -24,6 +24,10 @@ DEFAUlT_STYLE = DAWNLIKE_STYLE
 
 KENNEY_IMAGE_RESOURCE_FOLDER = str(
     os.curdir + os.sep + "resources" + os.sep + "img" + os.sep + "Kenney" + os.sep + "UIPack" + os.sep)
+KENNEY_COLOR_BEIGE = "beige"
+KENNEY_COLOR_BEIGE_LIGHT = "beigeLight"
+KENNEY_COLOR_BROWN = "brown"
+KENNEY_COLOR_BLUE = "blue"
 
 TILE_SIZE = (16, 16)
 
