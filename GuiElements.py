@@ -135,6 +135,7 @@ class KenneyContainerStyle:
         :param single_last_widget: make specific room for the last widget
         :param padding_v: the vertical padding between widgets
         :param padding_h: the horizontal padding between widgets
+        :param font: filename of the font. It will be taken from the font folder.
         :return: a fully built container style
         """
         assert color, "At least one color needs to be provided"
@@ -209,16 +210,22 @@ class KenneyContainer(planes.gui.Container):
 
         # Mandatory fit new height, observe padding
         max_width = self.preferred_size[0]
-        max_height = 0
+        max_height = self.subplanes[self.subplanes_list[0]].rect.height
 
-        for a_plane in self.subplanes.values():
-            (h_plane_align, v_plane_align, fix_width, fix_height, stack_horizontal) = self.subplanes_alignment[a_plane.name]
+        for name in self.subplanes_list:
+            (h_plane_align, v_plane_align, fix_width, fix_height, stack_horizontal) = self.subplanes_alignment[name]
+
             if fix_width and fix_width > max_width:
                 max_width = fix_width
-            elif a_plane.rect.width > max_width:
-                max_width = a_plane.rect.width
-            if a_plane.rect.height > max_height:
-                max_height = a_plane.rect.height
+            elif self.subplanes[name].rect.width > max_width:
+                max_width = self.subplanes[name].rect.width + margin_left + margin_right
+
+            # height: we don't take into account the last widget (which we assume has a fixed height)
+            if name != self.subplanes_list[-1]:
+                if fix_height and fix_height > max_height:
+                    max_height = fix_height
+                if self.subplanes[name].rect.height > max_height:
+                    max_height = self.subplanes[name].rect.height
 
         ypos = margin_top
 
@@ -253,11 +260,20 @@ class KenneyContainer(planes.gui.Container):
             list_image = [Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "panel_" + self.style.background_color + ".png",
                           Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "panel_" + self.style.color + ".png"]
             if self.style.single_last_widget and len(self.subplanes) > 0:
+                # Not: this adds an extra 10 margin all around!
+                for name in self.subplanes_list:
+                    self.subplanes[name].rect.left += 10
+                    self.subplanes[name].rect.top += 10
+                self.rect.width += 20
+                self.rect.height += 30
+
                 last_widget_height = self.subplanes[self.subplanes_list[len(self.subplanes) - 1]].rect.height
-                bottom_margin = last_widget_height+ self.style.padding_v + self.style.margin_bottom
-                internal_margin = [[10, 10, 10, bottom_margin + 10]]
-                self.rect.height += 10
-                self.subplanes[self.subplanes_list[len(self.subplanes) - 1]].rect.top += 10
+                bottom_margin = last_widget_height+ 15
+                internal_margin = [[10, 10, 10, bottom_margin]]
+
+                # and we need to move the last widget by an additional 17
+                self.subplanes[self.subplanes_list[len(self.subplanes) - 1]].rect.top += 17
+
                 self.background = IncludedSurface.render(self.rect.size, list_image, list_internal_margin=internal_margin)
             else:
                 self.background = IncludedSurface.render(self.rect.size, list_image)
@@ -300,7 +316,7 @@ class KenneyContainer(planes.gui.Container):
         self.rendersurface = self.image.copy()
         return
 
-    def remove(self, plane_identifier, resize_background=True):
+    def remove(self, plane_identifier, resize_background=False):
         """
         Remove the subplane, then reposition remaining subplanes and resize the container.
         """
@@ -313,8 +329,8 @@ class KenneyContainer(planes.gui.Container):
         planes.Plane.remove(self, name)
 
         # Now shrink and adapt background
-        self._resize()
         if resize_background:
+            self._resize()
             self.render_background()
 
         self.redraw()
@@ -322,38 +338,48 @@ class KenneyContainer(planes.gui.Container):
 
 
 
-class KenneyOKLabel(KenneyContainer, planes.gui.OkBox):
+class KenneyPopupLabel(KenneyContainer):
     """
-    Container: A box which displays a message and an LMR OK button over a TMB background.
-    It is destroyed when OK is clicked.
+    A popup that displays a message (wrapped) with a OK button.
+    It is destroyed when OK is clicked, and an optional callback is called.
     The message will be wrapped at newline characters.
     """
 
-    def __init__(self, message, style=None, button_style=None):
+    def __init__(self,
+                 message,
+                 style=None,
+                 button_style=None,
+                 message_h_align=KenneyContainer.H_ALIGN_CENTER,
+                 callback=None):
         """
-        Initialise.
-           style is an optional instance of TMBStyle. If no style is given, it
-           defaults to KENNEY_CONTAINER_STYLE_INCLUDED
-           button_style is an optional instance of WidgetStyle.
+        Initialize the popup
+        :param message: the message to be displayed, will be splitted at "\n"
+        :param style: the style for the container
+        :param button_style: the style for the button
+        :param message_h_align: alignment of the message (default: center)
+        :param callback: optional callback that will be called when the button is pressed.
+        :return:
         """
         if not style:
             style = KENNEY_CONTAINER_STYLE_INCLUDED
+        self.callback = callback
 
         KenneyContainer.__init__(self, str(id(self)), style, preferred_size=(10, 20))
 
-        # Adapted from planes.gui.OkBox
         lines = message.split("\n")
-
         for line_no in range(len(lines)):
-            self.sub(planes.gui.Label("message_line_{0}".format(line_no),
-                                      lines[line_no],
-                                      pygame.Rect((0, 0),
-                                                  (len(lines[line_no]) * planes.gui.PIX_PER_CHAR, 20)),
-                                      background_color=(0, 0, 0, 0)), fix_height=20)
+            self.sub(KenneyWidgetLabel(lines[line_no]), h_align=message_h_align)
+        self.sub(KenneyWidgetButton(self.ok, label="OK", style=button_style))
 
-        # Use default style
-        self.sub(planes.gui.lmr.LMRButton("", 20, self.ok))
+        return
 
+    def ok(self, plane, event=None):
+        """
+        Button clicked callback which destroys the OkBox.
+        """
+        if self.callback:
+            self.callback(source=self, event=event)
+        self.destroy()
         return
 
 class KenneyWidgetStyle:
@@ -374,7 +400,10 @@ class KenneyWidgetStyle:
                  v_align=V_ALIGN_MIDDLE,
                  h_margin=0,
                  v_margin=0,
-                 default_height=30
+                 text_color=(0, 0, 0),
+                 font=None,
+                 default_height=30,
+                 default_width=100,
                  ):
         """
         Basic style for all widgets
@@ -384,14 +413,16 @@ class KenneyWidgetStyle:
         :param v_align: the vertical text alignment (if this widget has a text) - top, middle or center.
         :param h_margin: in case of left/right alignment, the horizontal margin
         :param v_margin: in case of top/bottom alignment, the vertical margin
+        :param text_color: the text color (if any)
         :param default_height: if no height is provided, this will be the default
+        :param default_width: if no width is provided, this will be the default
         :return: a fully built container style
         """
         assert color or background_image_filename, "Either a color or a background image needs to be provided"
         # Save the properties
         self.color = color
         self.background_image_filename = background_image_filename
-        if background_image_filename not in KenneyWidgetStyle.IMAGE_DICT.keys():
+        if background_image_filename and background_image_filename not in KenneyWidgetStyle.IMAGE_DICT.keys():
             KenneyWidgetStyle.IMAGE_DICT[background_image_filename] = \
                 pygame.image.load(background_image_filename).convert_alpha()
         self.h_align = h_align
@@ -399,6 +430,15 @@ class KenneyWidgetStyle:
         self.h_margin = h_margin
         self.v_margin = v_margin
         self.default_height = default_height
+        self.default_width = default_width
+        self.text_color = text_color
+        a_font = None
+        if font:
+            a_font = Constants.FONT_FOLDER + font + ".ttf"
+        self.font = pygame.font.Font(a_font, 12)
+
+# Default widget styles
+KENNEY_WIDGET_STYLE_BLUE = KenneyWidgetStyle(color=Constants.KENNEY_COLOR_BLUE, font="dolphin")
 
 class KenneyWidget:
     """
@@ -424,13 +464,111 @@ class KenneyWidget:
             self.background = pygame.Surface((width, height), flags = pygame.SRCALPHA).convert_alpha()
             self.background.blit(pygame.transform.smoothscale(KenneyWidgetStyle[style.background_image_filename].copy, (width, height)))
 
-class KenneyButton(KenneyWidget, planes.gui.Button):
-    """A planes.gui.Button enhanced with Kenney ;-).
+class KenneyWidgetLabel(planes.Plane):
+    """
+    A specific label object, able to follow n object with/without an attribute
     """
 
-    # TODO: Use Label font argument.
+    def __init__(self, text=None, width=None, height=None, style=None, follow_object=None, follow_attribute=None):
+        """Initialise the Label.
+           text is the text to be written on the Label. If text is None, it is
+           replaced by an empty string.
+        """
+        # Call base class init
+        if not style:
+            style = KENNEY_WIDGET_STYLE_BLUE
+        self.style = style
 
-    def __init__(self, label, width, callback, style):
+        required_width = style.default_width
+        required_height = style.default_height
+
+        self.follow_object = follow_object
+        self.follow_attribute = follow_attribute
+
+        test_attribute = self._get_text()
+        if test_attribute:
+            # if we follow an object or an attribute, then we overwrite the text
+            text = test_attribute
+
+        if text is not None:
+            self.text = text
+            possible_surface = self.style.font.render(self.text, True, self.style.text_color)
+            required_width = possible_surface.get_rect().width
+            required_height = possible_surface.get_rect().height
+        else:
+            self.text = ""
+
+        if width:
+            required_width = max(width, required_width)
+        if height:
+            required_height = max(height, required_height)
+
+        planes.Plane.__init__(self, str(id(self)),
+                              pygame.Rect((0, 0), (required_width, required_height)), draggable=False, grab=False)
+
+        self.cached_text = None
+        self.background_color = self.cached_color = self.current_color = (0, 0, 0, 0)
+        self.image = pygame.Surface(self.rect.size, flags=pygame.SRCALPHA)
+
+        self.redraw()
+        return
+
+    def update(self):
+        """
+        Renew the text on the label, then call the base class method.
+        """
+        test_attribute = self._get_text()
+        if test_attribute:
+            # if we follow an object or an attribute, then we overwrite the text
+            self.text = test_attribute
+
+        self.redraw()
+        planes.Plane.update(self)
+        return
+
+    def redraw(self):
+        """
+        Redraw the Label if necessary.
+        """
+
+        if self.text != self.cached_text or self.current_color != self.cached_color:
+            self.image.fill(self.current_color)
+
+            # Text is centered on rect.
+            fontsurf = self.style.font.render(self.text, True, self.style.text_color)
+            centered_rect = fontsurf.get_rect()
+
+            # Get a neutral center of self.rect
+            #
+            centered_rect.center = pygame.Rect((0, 0), self.rect.size).center
+
+            self.image.blit(fontsurf, centered_rect)
+
+            # Force redraw in render()
+            #
+            self.last_rect = None
+
+            self.cached_text = self.text
+            self.cached_color = self.current_color
+
+        return
+
+    def _get_text(self):
+        if self.follow_attribute:
+            assert self.follow_object, "An attribute was set without object??"
+            return str(getattr(self.follow_object, self.follow_attribute))
+        elif self.follow_object:
+            return str(self.object_followed)
+        else:
+            return None
+
+
+class KenneyWidgetButton(KenneyWidget, KenneyWidgetLabel):
+    """
+    A planes.gui.Button enhanced with Kenney ;-).
+    """
+    def __init__(self, callback, width=None, height=None, style=None, label=None):
+        # TODO: Directly inherit from label instead.
         """Initialise the Button.
 
            label is the Text to be written on the button.
@@ -441,19 +579,28 @@ class KenneyButton(KenneyWidget, planes.gui.Button):
            style is an instance of LMRStyle. If omitted, GREY_BUTTON_STYLE will be
            used.
         """
+        if not style:
+            style = KENNEY_WIDGET_STYLE_BLUE
+        if not width:
+            width = style.default_width
+        if not height:
+            height = style.default_height
+
+        if label is not None:
+            possible_surface = style.font.render(label, True, style.text_color)
+            width = max(possible_surface.get_rect().width + 20, width)
+            height = max(possible_surface.get_rect().height + 10, height)
 
         # Initialise self.background
-        #
-        KenneyWidget.__init__(self, width, style)
-
+        KenneyWidget.__init__(self, style, width, height=height)
         # Now call base class.
-        # This will also call redraw().
-        #
-        planes.gui.Button.__init__(self,
-                                   label,
-                                   self.background.get_rect(),
-                                   callback)
+        KenneyWidgetLabel.__init__(self, text=label, width=width, height=height, style=style)
 
+        # Overwrite Plane base class attributes
+        self.left_click_callback = callback
+        self.highlight = True
+        self.clicked_counter = 0
+        self.redraw()
         return
 
     def redraw(self):
@@ -461,39 +608,51 @@ class KenneyButton(KenneyWidget, planes.gui.Button):
         """
 
         # Partly copied from Label.redraw()
-        #
         if self.text != self.cached_text:
-
             # Copy, don't blit, taking care for transparency
-            #
             self.image = self.background.copy()
-
             # Text is centered on rect.
-            #
-            fontsurf = planes.gui.FONTS.small_font.render(self.text,
-                                                          True,
-                                                          self.style.text_color)
-
+            fontsurf = self.style.font.render(self.text, True, self.style.text_color)
             centered_rect = fontsurf.get_rect()
 
             # Get a neutral center of self.rect
-            #
             centered_rect.center = pygame.Rect((0, 0), self.rect.size).center
 
             # Anticipate a drop shadow: move the text up a bit
-            #
             centered_rect.move_ip(0, -1)
-
             self.image.blit(fontsurf, centered_rect)
 
             # Force redraw in render()
-            #
             self.last_rect = None
-
             self.cached_text = self.text
+        return
+
+    def update(self):
+        """
+        Change color if clicked, then call the base class method.
+        """
+        if self.clicked_counter:
+            self.clicked_counter = self.clicked_counter - 1
+            if not self.clicked_counter:
+                # Just turned zero, restore original background
+                self.current_color = self.background_color
+        KenneyWidgetLabel.update(self)
 
         return
 
+    def clicked(self, button_name, event=None):
+        """Plane standard method, called when there is a MOUSEDOWN event on this plane.
+           Changes the Button color for some frames and calls the base class implementation.
+        """
+        if button_name == "left":
+            self.clicked_counter = 4
+            # Half-bright
+            self.current_color = list(map(lambda i: int(i * 0.5), self.current_color))
+            self.redraw()
+
+        # Call base class implementation which will call the callback
+        KenneyWidgetLabel.clicked(self, button_name, event=event)
+        return
 
 class ScaledSurface:
     IMAGE_DICT = {}

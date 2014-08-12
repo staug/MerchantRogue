@@ -171,7 +171,7 @@ if __name__ == '__main__':
 
     pygame.mouse.set_cursor(*pygame.cursors.diamond)
 
-    screen.sub(GuiElements.KenneyOKLabel("This is a very very long message.\nI test wrapper.\nAgain a very very long sentecne that never ends\nShort.", style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
+    screen.sub(GuiElements.KenneyPopupLabel("This is a very very long message.\nI test wrapper.\nAgain a very very long sentecne that never ends\nShort.", style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
 
     while True:
 

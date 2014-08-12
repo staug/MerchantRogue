@@ -29,6 +29,8 @@ KENNEY_COLOR_BEIGE_LIGHT = "beigeLight"
 KENNEY_COLOR_BROWN = "brown"
 KENNEY_COLOR_BLUE = "blue"
 
+FONT_FOLDER = str(os.curdir + os.sep + "resources" + os.sep + "font" + os.sep)
+
 TILE_SIZE = (16, 16)
 
 DISPLAY_EVENT = USEREVENT + 1

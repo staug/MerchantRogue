@@ -530,9 +530,7 @@ class Button(Label):
            Counted down when the button is clicked and displays a different color
     """
 
-    # TODO: Use Label font argument.
-
-    def __init__(self, label, rect, callback, background_color = None, text_color = (0, 0, 0)):
+    def __init__(self, label, rect, callback, background_color = None, text_color = (0, 0, 0), font=None):
         """Initialise the Button.
            label is the Text to be written on the button.
            rect is an instance of pygame.Rect giving the dimensions.
@@ -554,7 +552,7 @@ class Button(Label):
 
         # Call base class init
         #
-        Label.__init__(self, name, label, rect, background_color, text_color)
+        Label.__init__(self, name, label, rect, background_color, text_color, font=font)
 
         # Overwrite Plane base class attributes
         #
