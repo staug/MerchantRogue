@@ -65,8 +65,10 @@ class DisplayableObject(object):
             return False
         # Test to know if any objects with callbacks are in the new position
         for an_object in self.town.tile_map.map[new_tile_position].object_on_tile:
-            if not an_object.call_action():
-                Util.Event("The object at {} prevented the move".format(new_tile_position))
+            action_result = an_object.call_action(trigger=self)
+            if action_result and Constants.PREVENT_MOVEMENT in action_result:
+                if not ignore_message:
+                    Util.Event("{} at {} prevented the move".format(an_object.name, new_tile_position))
                 return False
 
         self.graphical_representation.graphical_move(self.position_on_tile, new_tile_position)

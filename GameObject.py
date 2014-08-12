@@ -223,8 +223,10 @@ class Door(GameObject):
 
 
 def door_open(**kwargs):
+    if kwargs["source"].locked:
+        Util.Event("This door is locked and cannot be open")
+        return[Constants.PREVENT_MOVEMENT]
     if kwargs["source"].closed:
-        Util.Event("This door is closed")
         kwargs["source"].closed = False
 
         draw = kwargs["source"].displayable_object.graphical_representation.surface_to_draw
@@ -238,7 +240,7 @@ def door_open(**kwargs):
         ))
         kwargs["source"].displayable_object.graphical_representation.set_surface(draw, memory)
         Util.Event("This door is now open")
-        return True
+        return []
     else:
         Util.Event("This door is already open")
-        return True
+        return []

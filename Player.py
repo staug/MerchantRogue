@@ -2,7 +2,7 @@ __author__ = 'Tangil'
 
 import random
 import math
-
+import Constants
 import Util
 import GameData
 from Displayable import DisplayableObject
@@ -97,9 +97,9 @@ class Player(DisplayableObject):
 
 class NonPlayableCharacter(DisplayableObject):
 
-    def __init__(self, town, position_on_tile=(0, 0),
+    def __init__(self, town, name=None, position_on_tile=(0, 0),
                  graphical_representation = None, surface_to_draw=None, surface_memory=None,
-                 default_action_list=None, action_when_player=None):
+                 default_action_list=None, action_when_player=None, action_when_other_npc=None):
         super().__init__(town, movable=True, position_on_tile=position_on_tile,
                          graphical_representation=graphical_representation,
                          surface_to_draw=surface_to_draw, surface_memory=surface_memory)
@@ -108,33 +108,55 @@ class NonPlayableCharacter(DisplayableObject):
         else:
             self.default_action_list = default_action_list
         if not action_when_player:
-            self.action_when_player = [self.speak_garbage]
+            self.action_when_player = self.speak_garbage
         else:
             self.action_when_player = action_when_player
+        if not action_when_other_npc:
+            self.action_when_other_npc = self.do_nothing
+        else:
+            self.action_when_player = action_when_other_npc
+        self.blocking = True
+
+        if not name:
+            name = "NPC"+str(id(self))
+        self.name=name
+
+    def call_action(self, **kwargs):
+        trigger = kwargs.pop("trigger")
+        if trigger and isinstance(trigger, NonPlayableCharacter):
+            if self.action_when_other_npc:
+                return self.action_when_npc(source=self, **kwargs)
+        elif self.action_when_player:
+            return self.action_when_player(source=self, **kwargs)
+        return True
 
     def take_action(self):
         dx = GameData.player.position_on_tile[0] - self.position_on_tile[0]
         dy = GameData.player.position_on_tile[1] - self.position_on_tile[1]
         distance = math.sqrt(dx ** 2 + dy ** 2)
-        if distance < 2 and len(self.action_when_player) > 0:
-            random.choice(self.action_when_player)()
+        if distance < 2 and isinstance(self.action_when_other_npc, list) and len(self.action_when_player) > 0:
+            random.choice(self.action_when_player)(source=self)
+        elif distance < 2 and self.action_when_player:
+            self.action_when_player(source=self)
         elif len(self.default_action_list) > 0:
-            random.choice(self.default_action_list)()
+            random.choice(self.default_action_list)(source=self)
         else:
-            self.wander()
+            self.wander(source=self)
 
-    def speak_garbage(self):
+    def speak_garbage(self, **kwargs):
         Util.Event("Hello player!")
-        self.action_when_player.remove(self.speak_garbage)
+        self.action_when_player = self.do_nothing
         self.default_action_list.remove(self.get_close_to_player)
+        return [Constants.PREVENT_MOVEMENT]
 
-    def wander(self):
+    def wander(self, **kwargs):
         self.move(random.randint(-1, 1), random.randint(-1, 1), ignore_message=True)
 
-    def do_nothing(self):
+    def do_nothing(self, **kwargs):
+        print("{} was told to do nothing".format(self.name))
         pass
 
-    def get_close_to_player(self):
+    def get_close_to_player(self, **kwargs):
         #vector from this object to the target, and distance
         dx = GameData.player.position_on_tile[0] - self.position_on_tile[0]
         dy = GameData.player.position_on_tile[1] - self.position_on_tile[1]
@@ -146,7 +168,7 @@ class NonPlayableCharacter(DisplayableObject):
         dy = int(round(dy / distance))
         self.move(dx, dy, ignore_message=True)
 
-    def stay_in_room(self):
+    def stay_in_room(self, **kwargs):
         old_building = self.town.tile_map.map[self.position_on_tile].room
         old_position = self.position_on_tile
         self.wander()

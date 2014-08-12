@@ -11,7 +11,12 @@ from pygame.locals import USEREVENT
 GAME_WINDOW_SIZE = (600, 600)
 # PLACE_WINDOW_SIZE = (640, 480)
 PLACE_WINDOW_SIZE = GAME_WINDOW_SIZE
+TILE_SIZE = (16, 16)
 
+DISPLAY_EVENT = USEREVENT + 1
+DEBUG_EVENT = USEREVENT + 2
+
+#STYLE INFORMATION
 DAWNLIKE_IMAGE_RESOURCE_FOLDER = str(os.curdir + os.sep + "resources" + os.sep + "img" + os.sep + "Dawnlike" + os.sep)
 DAWNLIKE_STYLE = "DAWNLIKE"
 DAWNLIKE_TILE_SIZE = (16, 16)
@@ -31,8 +36,6 @@ KENNEY_COLOR_BLUE = "blue"
 
 FONT_FOLDER = str(os.curdir + os.sep + "resources" + os.sep + "font" + os.sep)
 
-TILE_SIZE = (16, 16)
-
-DISPLAY_EVENT = USEREVENT + 1
-DEBUG_EVENT = USEREVENT + 2
-
+# CALL ACTION RESULT
+# This is a set of possible result of the call action method (on objects or npc)
+PREVENT_MOVEMENT = "action_prevent_movement"

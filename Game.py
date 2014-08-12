@@ -46,7 +46,7 @@ class Game():
 
         Util.DebugEvent("Setting up objects in the towns...")
         for town in GameData.town_graph.towns:
-            for i in range(1):
+            for i in range(5):
                 image_coordinate_x = [x*16 for x in range(0, 7)]
                 image_coordinate_y = [y*16 for y in (3, 4, 7, 8)]
                 coordinates = (random.choice(image_coordinate_x), random.choice(image_coordinate_y))
@@ -59,7 +59,7 @@ class Game():
                                                                                      "Characters", "Player",
                                                                                      coordinates))
 
-                # town.npc_list.append(npc)
+                town.npc_list.append(npc)
 
             for i in range(25):
                 """
@@ -171,7 +171,7 @@ if __name__ == '__main__':
 
     pygame.mouse.set_cursor(*pygame.cursors.diamond)
 
-    screen.sub(GuiElements.KenneyPopupLabel("This is a very very long message.\nI test wrapper.\nAgain a very very long sentecne that never ends\nShort.", style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
+    #screen.sub(GuiElements.KenneyPopupLabel("This is a very very long message.\nI test wrapper.\nAgain a very very long sentecne that never ends\nShort.", style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
 
     while True:
 
@@ -184,9 +184,10 @@ if __name__ == '__main__':
                 raise SystemExit
             if event.type == Constants.DISPLAY_EVENT:
                 print(event.message)
-                event_box = planes.gui.MultiLinesOutlinedText(event.message)
+                event_box = GuiElements.KenneyPopupLabel(event.message)
                 screen.sub(event_box)
                 event_box.rect.top = 100
+                event_box.rect.centerx=screen.rect.centerx
             if event.type == Constants.DEBUG_EVENT:
                 print(event.message)
             if event.type == KEYDOWN and event.key == K_RIGHT:

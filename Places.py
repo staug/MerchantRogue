@@ -409,10 +409,15 @@ class TownTileMap(TileMap):
                         nb_placed += 1
 
             def add_deco(self, tile_map, max_x, max_y):
+                list_doors=[door_def[0] for door_def in self.doors]
                 for i in range(10):
                     place = random.choice(self.places)
                     weight = self.compute_tile_weight(place[0], place[1], (Tile.FLOOR), tile_map, max_x, max_y)
-                    if tile_map[place].floor_type == Tile.FLOOR and not tile_map[place].decoration_type and weight == 15:
+                    near_door = (place[0] - 1, place[1] - 1) in list_doors or \
+                                (place[0] - 1, place[1] + 1) in list_doors or \
+                                (place[0] + 1, place[1] - 1) in list_doors or \
+                                (place[0] + 1, place[1] + 1) in list_doors
+                    if not near_door and tile_map[place].floor_type == Tile.FLOOR and not tile_map[place].decoration_type and weight == 15:
                         tile_map[place].decoration_type = random.choice(self.building.decoration_list["1x1"])
                         if tile_map[place].decoration_type[1]:
                             tile_map[place].decoration_blocking = True
