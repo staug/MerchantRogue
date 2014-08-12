@@ -349,10 +349,148 @@ class KenneyOKLabel(KenneyContainer, planes.gui.OkBox):
                                       lines[line_no],
                                       pygame.Rect((0, 0),
                                                   (len(lines[line_no]) * planes.gui.PIX_PER_CHAR, 20)),
-                                      background_color=(128, 128, 128, 0)), fix_height=20)
+                                      background_color=(0, 0, 0, 0)), fix_height=20)
 
         # Use default style
-        self.sub(planes.gui.lmr.LMRButton("OK", 20, self.ok))
+        self.sub(planes.gui.lmr.LMRButton("", 20, self.ok))
+
+        return
+
+class KenneyWidgetStyle:
+
+    V_ALIGN_MIDDLE = "middle"
+    V_ALIGN_TOP = "top"
+    V_ALIGN_BOTTOM = "bottom"
+    H_ALIGN_CENTER = "center"
+    H_ALIGN_LEFT = "left"
+    H_ALIGN_RIGHT = "right"
+
+    IMAGE_DICT = {}
+
+    def __init__(self,
+                 color=None,
+                 background_image_filename=None,
+                 h_align=H_ALIGN_CENTER,
+                 v_align=V_ALIGN_MIDDLE,
+                 h_margin=0,
+                 v_margin=0,
+                 default_height=30
+                 ):
+        """
+        Basic style for all widgets
+        :param color: the color of the foreground. Must be present if background image is not there
+        :param background_image_filename: a reference to the background image (note: it will be saved). Must be present if color is not there.
+        :param h_align: the horizontal text alignment (if this widget has a text) - center, left or right.
+        :param v_align: the vertical text alignment (if this widget has a text) - top, middle or center.
+        :param h_margin: in case of left/right alignment, the horizontal margin
+        :param v_margin: in case of top/bottom alignment, the vertical margin
+        :param default_height: if no height is provided, this will be the default
+        :return: a fully built container style
+        """
+        assert color or background_image_filename, "Either a color or a background image needs to be provided"
+        # Save the properties
+        self.color = color
+        self.background_image_filename = background_image_filename
+        if background_image_filename not in KenneyWidgetStyle.IMAGE_DICT.keys():
+            KenneyWidgetStyle.IMAGE_DICT[background_image_filename] = \
+                pygame.image.load(background_image_filename).convert_alpha()
+        self.h_align = h_align
+        self.v_align = v_align
+        self.h_margin = h_margin
+        self.v_margin = v_margin
+        self.default_height = default_height
+
+class KenneyWidget:
+    """
+    Base class for fixed-height, flexible-width widgets with a background.
+    """
+
+    def __init__(self, style, width, height=None):
+        """
+        Initialise LMRWidget.background from width and style given.
+        width is the total widget width in pixels.
+        style is an instance of KenneyWidgetStyle.
+        If height is not given it is taken from the style.default_height.
+        """
+        self.style = style
+        # Compute dimensions
+        if not height:
+            height = style.default_height
+        # Dimensions
+        if style.color:
+            self.background = ScaledSurface.render(
+                (width, height), Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "panel_" + self.style.color + ".png")
+        else:
+            self.background = pygame.Surface((width, height), flags = pygame.SRCALPHA).convert_alpha()
+            self.background.blit(pygame.transform.smoothscale(KenneyWidgetStyle[style.background_image_filename].copy, (width, height)))
+
+class KenneyButton(KenneyWidget, planes.gui.Button):
+    """A planes.gui.Button enhanced with Kenney ;-).
+    """
+
+    # TODO: Use Label font argument.
+
+    def __init__(self, label, width, callback, style):
+        """Initialise the Button.
+
+           label is the Text to be written on the button.
+
+           callback is the function to be called with callback(Button) when the
+           Button is clicked with the left mouse button.
+
+           style is an instance of LMRStyle. If omitted, GREY_BUTTON_STYLE will be
+           used.
+        """
+
+        # Initialise self.background
+        #
+        KenneyWidget.__init__(self, width, style)
+
+        # Now call base class.
+        # This will also call redraw().
+        #
+        planes.gui.Button.__init__(self,
+                                   label,
+                                   self.background.get_rect(),
+                                   callback)
+
+        return
+
+    def redraw(self):
+        """Conditionally redraw the Button.
+        """
+
+        # Partly copied from Label.redraw()
+        #
+        if self.text != self.cached_text:
+
+            # Copy, don't blit, taking care for transparency
+            #
+            self.image = self.background.copy()
+
+            # Text is centered on rect.
+            #
+            fontsurf = planes.gui.FONTS.small_font.render(self.text,
+                                                          True,
+                                                          self.style.text_color)
+
+            centered_rect = fontsurf.get_rect()
+
+            # Get a neutral center of self.rect
+            #
+            centered_rect.center = pygame.Rect((0, 0), self.rect.size).center
+
+            # Anticipate a drop shadow: move the text up a bit
+            #
+            centered_rect.move_ip(0, -1)
+
+            self.image.blit(fontsurf, centered_rect)
+
+            # Force redraw in render()
+            #
+            self.last_rect = None
+
+            self.cached_text = self.text
 
         return
 

@@ -545,7 +545,8 @@ class Button(Label):
         name = ''.join(filter(str.isalnum, label)).lower()
 
         if not name:
-            raise Exception("Invalid Button name '{0}': it must contain at least one alphanumeric character.".format(label))
+            name = str(id(self))
+            #raise Exception("Invalid Button name '{0}': it must contain at least one alphanumeric character.".format(label))
 
         if background_color is None:
 
