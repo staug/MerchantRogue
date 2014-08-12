@@ -1389,3 +1389,198 @@ class IncludedSurface:
                 new_surface = ScaledSurface(current_size, list_image[x]).surface
             surface.blit(new_surface, (current_top_pos[0], current_top_pos[1]))
         return surface
+
+
+import planes.gui
+import Constants
+
+
+class KenneyContainer(planes.gui.Container):
+    """A planes.gui.Container with variable width and height and a Kenney background.
+
+       Additional attributes:
+
+       TMBContainer.style
+           An instance of TMBStyle.
+
+       TMBContainer.background
+           A Pygame Surface, holding the rendered background.
+           Initially None, repainted in TMBContainer.sub().
+    """
+
+    V_ALIGN_MIDDLE = "middle"
+    V_ALIGN_TOP = "top"
+    V_ALIGN_BOTTOM = "bottom"
+    H_ALIGN_CENTER = "center"
+    H_ALIGN_LEFT = "left"
+    H_ALIGN_RIGHT = "right"
+
+    def __init__(self, name, preferred_size, kenney_style, padding_h=0, padding_v=0):
+        """Initialise.
+           style is an instance of kenney style, which should hold the image name as well as the
+           default margins & paddings...
+        """
+        # Call base
+        planes.gui.Container.__init__(self, name, padding_v)
+        # save main arguments
+        self.style = kenney_style
+        self.background = None
+        self.preferred_size = preferred_size
+
+        # Initialise initial rect width. This may be changed later when adding new things in the container
+        self.rect.width = preferred_size[0]
+        self.rect.height = preferred_size[1]
+
+        self.padding_h = padding_h
+        self.padding_v = padding_v
+
+        self.draggable = True
+        self.grab = False
+        self.subplanes_alignment = {}  # tuple (h_align, v_align) to remember the alignment of each.
+
+        return
+
+    def sub(self,
+            plane,
+            h_align=H_ALIGN_CENTER,
+            v_align=V_ALIGN_MIDDLE):
+        # TODO: this only resize the height as teh whidth is supposed to be fixed, needs to change that!
+        # TODO WE ARE STACKING ALL VERTICALY HERE....
+        """
+        Resize the container, update the position of plane and add it as a subplane.
+        This will also repaint TMBContainer.background.
+        """
+
+        # Adapted from gui.Container method
+
+        # First add the subplane by calling the base class method.
+        # This also cares for re-adding an already existing subplane.
+        planes.Plane.sub(self, plane)
+        self.subplanes_alignment[plane.name] = (h_align, v_align)
+        # Existing subplanes are already incorporated in self.rect.
+        # We need it a couple of times
+        # TODO: make that dependent from Kenney Style instead!
+        margin_top = 50  # this is the height of the top part
+        margin_bottom = 10  # this is the height of the bottom part
+        margin_left = 10  # this is the height of the bottom part
+        margin_right = 10  # this is the height of the bottom part
+
+        # Mandatory fit new height, observe padding
+        max_width = max_height = 0
+        for a_plane in self.subplanes.values():
+            if a_plane.rect.width > max_width:
+                max_width = a_plane.rect.width
+            if a_plane.rect.height > max_height:
+                max_height = a_plane.rect.height
+
+        ypos = margin_top
+
+        for name in self.subplanes_list:
+            (h_plane_align, v_plane_align) = self.subplanes_alignment[name]
+
+            if v_plane_align == KenneyContainer.V_ALIGN_MIDDLE:
+                self.subplanes[name].rect.centery = ypos + int(max_height / 2)
+            elif v_plane_align == KenneyContainer.V_ALIGN_TOP:
+                self.subplanes[name].rect.top = ypos
+            elif v_plane_align == KenneyContainer.V_ALIGN_BOTTOM:
+                self.subplanes[name].rect.bottom = ypos + max_height
+            ypos += (max_height + self.padding_v)
+
+            if h_plane_align == KenneyContainer.H_ALIGN_CENTER:
+                self.subplanes[name].rect.centerx = margin_left + int(max_width / 2)
+            elif h_plane_align == KenneyContainer.H_ALIGN_LEFT:
+                self.subplanes[name].rect.left = margin_left
+            elif h_plane_align == KenneyContainer.H_ALIGN_RIGHT:
+                self.subplanes[name].rect.right = margin_right
+
+        self.rect.size = (max_width + margin_right + margin_left,
+                          max_height * len(self.subplanes) + margin_top + margin_bottom)
+        # Recreate background
+        self.background = ScaledSurface.render(self.rect.size,
+                                               Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "panel_beige.png")
+        self.redraw()
+
+        return
+
+    def redraw(self):
+        """Redraw TMBContainer.image using TMBContainer.background.
+           This also creates a new TMBContainer.rendersurface.
+        """
+        self.image = self.background.copy()
+        self.rendersurface = self.image.copy()
+        return
+
+    def remove(self, plane_identifier):
+        """Remove the subplane, then reposition remaining subplanes and resize the container.
+        """
+
+        # Adapted from gui.Container method
+
+        # Accept Plane name as well as Plane instance
+        #
+        if isinstance(plane_identifier, planes.Plane):
+            name = plane_identifier.name
+        else:
+            name = plane_identifier
+
+        # Save the height of the removed plane
+        height_removed = self.subplanes[name].rect.height + self.padding
+
+        planes.Plane.remove(self, name)
+
+        # Reposition remaining subplanes.
+        #
+        # TODO: make that dependent from Kenney Style instead!
+        margin_top = 50  # this is the height of the top part
+        margin_bottom = 10  # this is the height of the bottom part
+
+        for name in self.subplanes_list:
+            rect = self.subplanes[name].rect
+            rect.top = margin_top
+            margin_top = margin_top + rect.height + self.padding_v
+
+        # Now shrink and redraw.
+        #
+        self.rect.height = self.rect.height - height_removed
+
+        self.redraw()
+        return
+
+
+class KenneyLabel(KenneyContainer, planes.gui.OkBox):
+    """A box which displays a message and an LMR OK button over a TMB background.
+       It is destroyed when OK is clicked.
+       The message will be wrapped at newline characters.
+    """
+
+    def __init__(self, message, style, button_style=None):
+        """Initialise.
+
+           style is an optional instance of TMBStyle. If no style is given, it
+           defaults to C_256_STYLE.
+
+           button_style is an optional instance of lmr.LMRStyle.
+        """
+
+        # Base class __init__()
+        # We need a unique random name and just use this instance's id.
+        # TODO: prefix with some letters to make it usable via attribute calls
+        #
+        KenneyContainer.__init__(self, str(id(self)), (120, 20), style, padding_v=5)
+
+        # Adapted from planes.gui.OkBox
+        #
+        lines = message.split("\n")
+
+        for line_no in range(len(lines)):
+            self.sub(planes.gui.Label("message_line_{0}".format(line_no),
+                                      lines[line_no],
+                                      pygame.Rect((0, 0),
+                                                  (len(lines[line_no]) * planes.gui.PIX_PER_CHAR, 30)),
+                                      background_color=(128, 128, 128, 0)))
+
+
+        # Use default style
+        self.sub(planes.gui.lmr.LMRButton("OK", 50, self.ok))
+
+        return

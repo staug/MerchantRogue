@@ -164,10 +164,14 @@ if __name__ == '__main__':
     print("All objects init done - starting main loop")
 
     # Test
-    amessage = planes.gui.tmb.TMBOkBox("This is a long messages. I don't know how it will be split")
-    amessage.draggable = True
-    amessage.grab = False
-    screen.sub(amessage)
+    # amessage = planes.gui.tmb.TMBOkBox("This is a long messages. I don't know how it will be split")
+    #amessage.draggable = True
+    #amessage.grab = False
+    #screen.sub(amessage)
+
+    pygame.mouse.set_cursor(*pygame.cursors.diamond)
+
+    screen.sub(planes.KenneyLabel("testname", (150, 24), "test"))
 
     while True:
 
