@@ -233,8 +233,6 @@ class KenneyContainer(planes.gui.Container):
             else:
                 group_horizontal[-1].append([name, required_height, required_width])
 
-        print("GROUP: " + str(group_horizontal))
-
         max_normalized_widget_width = max_widget_height = 0
         max_line_width = 0
         for index, widget_group in enumerate(group_horizontal):
@@ -251,7 +249,6 @@ class KenneyContainer(planes.gui.Container):
             if current_line_width > max_line_width:
                 max_line_width = current_line_width
 
-        print("Max widget width: " + str(max_normalized_widget_width))
 
         ypos = margin_top
         max_right_pos = 0
@@ -299,7 +296,6 @@ class KenneyContainer(planes.gui.Container):
 
         self.rect.height = max(self.preferred_size[1], ypos + margin_bottom)
         self.rect.width = max(self.preferred_size[0], max_right_pos + margin_right)
-        print("Rect width: " + str(self.rect.width))
 
     def render_background(self):
         if self.style.is_included:
@@ -485,6 +481,48 @@ class KenneyPopupLabelCancel(KenneyContainer):
         return
 
 
+class KenneyPopupOption(KenneyContainer):
+    #TODO
+    """
+    A popup that displays a message (wrapped) with a OK button.
+    It is destroyed when OK is clicked, and an optional callback is called.
+    The message will be wrapped at newline characters.
+    """
+
+    def __init__(self,
+                 style=None,
+                 button_style=None,
+                 message_h_align=KenneyContainer.H_ALIGN_CENTER,
+                 callback=None,
+                 pos=(0, 0)):
+        """
+        Initialize the popup
+        :param message: the message to be displayed, will be splitted at "\n"
+        :param style: the style for the container
+        :param button_style: the style for the button
+        :param message_h_align: alignment of the message (default: center)
+        :param callback: optional callback that will be called when the button is pressed.
+        :return:
+        """
+        if not style:
+            style = KENNEY_CONTAINER_STYLE_INCLUDED
+        self.callback = callback
+
+        KenneyContainer.__init__(self, style=style, preferred_size=(10, 20), ignore_last_group_height=True, pos=pos)
+
+        self.sub(KenneyOptionButton(style=button_style))
+
+        return
+
+    def ok(self, plane, event=None):
+        """
+        Button clicked callback which destroys the OkBox.
+        """
+        if self.callback:
+            self.callback(source=self, event=event)
+        self.destroy()
+        return
+
 class KenneyGetStringDialog(KenneyContainer):
     """A combination of KenneyContainer, Label, TextBox and Button that asks the user for a string.
     """
@@ -595,6 +633,7 @@ class KenneyWidgetStyle:
 
 # Default widget styles
 KENNEY_WIDGET_STYLE_BLUE = KenneyWidgetStyle(color=Constants.KENNEY_COLOR_BLUE, font="dolphin")
+KENNEY_WIDGET_STYLE_BROWN = KenneyWidgetStyle(color=Constants.KENNEY_COLOR_BROWN, font="dolphin")
 
 class KenneyWidget:
     """
@@ -724,7 +763,6 @@ class KenneyWidgetButton(KenneyWidget, KenneyWidgetLabel):
     A planes.gui.Button enhanced with Kenney ;-).
     """
     def __init__(self, callback, width=None, height=None, style=None, label=None):
-        # TODO: Directly inherit from label instead.
         """Initialise the Button.
 
            label is the Text to be written on the button.
@@ -809,6 +847,100 @@ class KenneyWidgetButton(KenneyWidget, KenneyWidgetLabel):
         # Call base class implementation which will call the callback
         KenneyWidgetLabel.clicked(self, button_name, event=event)
         return
+
+class KenneyOptionButton(KenneyWidget, KenneyWidgetLabel):
+    # TODO: change this to use Kenney icons?
+    # TODO: optimize a bit?
+    """
+    A specific button for a list of selection. Change color when selected.
+    """
+    def __init__(self, callback, width=None, height=None, style=None, label=None):
+        """
+        Initialise the Button.
+        style is an instance of KenneyStyle. If omitted, GREY_BUTTON_STYLE will be
+        used.
+        """
+        if not style:
+            style = KENNEY_WIDGET_STYLE_BLUE
+        if not width:
+            width = style.default_width
+        if not height:
+            height = style.default_height
+
+        if label is not None:
+            possible_surface = style.font.render(label, True, style.text_color)
+            width = max(possible_surface.get_rect().width + 20, width)
+            height = max(possible_surface.get_rect().height + 10, height)
+
+        self.is_clicked = False
+        # Initialise self.background
+
+        KenneyWidget.__init__(self, style, width, height=height)
+        # Now call base class.
+        KenneyWidgetLabel.__init__(self, text=label, width=width, height=height, style=style)
+
+        # Overwrite Plane base class attributes
+        alternate_style = KENNEY_WIDGET_STYLE_BLUE
+        if style == KENNEY_WIDGET_STYLE_BLUE:
+            alternate_style = KENNEY_WIDGET_STYLE_BROWN
+        self.alternate_background = KenneyWidget(alternate_style, width, height=height).background
+
+        self.highlight = True
+        self.clicked_counter = 4
+        self.redraw()
+        return
+
+    def redraw(self):
+        """Conditionally redraw the Button.
+        """
+        # Partly copied from Label.redraw()
+        if self.text != self.cached_text:
+            # Copy, don't blit, taking care for transparency
+            if self.is_clicked:
+                self.image = self.alternate_background.copy()
+            else:
+                self.image = self.background.copy()
+            # Text is centered on rect.
+            fontsurf = self.style.font.render(self.text, True, self.style.text_color)
+            centered_rect = fontsurf.get_rect()
+
+            # Get a neutral center of self.rect
+            centered_rect.center = pygame.Rect((0, 0), self.rect.size).center
+
+            # Anticipate a drop shadow: move the text up a bit
+            centered_rect.move_ip(0, -1)
+            self.image.blit(fontsurf, centered_rect)
+
+            # Force redraw in render()
+            self.last_rect = None
+            self.cached_text = self.text
+        return
+
+    def update(self):
+        """
+        Change color if clicked, then call the base class method.
+        """
+        if self.clicked_counter:
+            self.clicked_counter = self.clicked_counter - 1
+            if not self.clicked_counter:
+                # Just turned zero, restore original background
+                self.current_color = self.background_color
+        KenneyWidgetLabel.update(self)
+        return
+
+    def clicked(self, button_name, event=None):
+        """Plane standard method, called when there is a MOUSEDOWN event on this plane.
+           Changes the Button color for some frames and calls the base class implementation.
+        """
+        self.is_clicked = not self.is_clicked
+        self.cached_text = None
+        if button_name == "left":
+            self.clicked_counter = 4
+            # Half-bright
+            self.current_color = list(map(lambda i: int(i * 0.5), self.current_color))
+            self.redraw()
+        return
+
 
 class ScaledSurface:
     IMAGE_DICT = {}

@@ -170,6 +170,8 @@ if __name__ == '__main__':
 
     #screen.sub(GuiElements.KenneyPopupLabelCancel("This is a very very long message.\nI test wrapper.\nAgain a very very long sentecne that never ends\nShort.", style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
     #screen.sub(GuiElements.KenneyGetStringDialog("Enter your very big name", test, style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
+    #screen.sub(planes.gui.OptionSelector("test", ["test1", "test2"], test))
+    screen.sub(GuiElements.KenneyOptionButton(test))
     while True:
 
         player_took_action = False
