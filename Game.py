@@ -91,11 +91,11 @@ class Game():
                                                                                 Constants.DAWNLIKE_STYLE, "Objects",
                                                                                 "Ground", (16, 48)),
                                                                             delayed_register=True))
-                town.game_object_list.append(an_object)
+                town.register_object(an_object)
                 # a door is an open object
             for room in town.tile_map.rooms:
                 for door in room.doors:
-                    town.register_object(Door(town, door[1], door[0], closed=True))
+                    town.register_object(Door(town, door[1], door[0], closed=True, locked=False))
 
         Util.DebugEvent("Setting up objects in the other places (To be done later)...")
 
@@ -163,13 +163,7 @@ if __name__ == '__main__':
     # END INITIALIZATION
     print("All objects init done - starting main loop")
 
-    # Test
-    # amessage = planes.gui.tmb.TMBOkBox("This is a long messages. I don't know how it will be split")
-    #amessage.draggable = True
-    #amessage.grab = False
-    #screen.sub(amessage)
-
-    pygame.mouse.set_cursor(*pygame.cursors.diamond)
+    #pygame.mouse.set_cursor(*pygame.cursors.diamond)
 
     #screen.sub(GuiElements.KenneyPopupLabel("This is a very very long message.\nI test wrapper.\nAgain a very very long sentecne that never ends\nShort.", style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
 

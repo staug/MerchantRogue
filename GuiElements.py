@@ -382,6 +382,55 @@ class KenneyPopupLabel(KenneyContainer):
         self.destroy()
         return
 
+class KenneyPopupLabelCancel(KenneyContainer):
+    """
+    A popup that displays a message (wrapped) with a OK and cancel button.
+    It is destroyed when OK or Cancel is clicked, and an optional callback is called.
+    The message will be wrapped at newline characters.
+    """
+
+    def __init__(self,
+                 message,
+                 style=None,
+                 button_style=None,
+                 message_h_align=KenneyContainer.H_ALIGN_CENTER,
+                 callback_ok=None,
+                 callback_cancel=None):
+        """
+        Initialize the popup
+        :param message: the message to be displayed, will be splitted at "\n"
+        :param style: the style for the container
+        :param button_style: the style for the button
+        :param message_h_align: alignment of the message (default: center)
+        :param callback: optional callback that will be called when the button is pressed.
+        :return:
+        """
+        if not style:
+            style = KENNEY_CONTAINER_STYLE_INCLUDED
+        self.callback_ok = callback_ok
+        self.callback_cancel = callback_cancel
+
+        KenneyContainer.__init__(self, str(id(self)), style, preferred_size=(10, 20))
+
+        lines = message.split("\n")
+        for line_no in range(len(lines)):
+            self.sub(KenneyWidgetLabel(lines[line_no]), h_align=message_h_align)
+        self.sub(KenneyWidgetButton(self.ok, label="OK", style=button_style))
+        self.sub(KenneyWidgetButton(self.cancel, label="Cancel", style=button_style))
+
+        return
+
+    def ok(self, plane, event=None):
+        if self.callback_ok:
+            self.callback_ok(source=self, event=event)
+        self.destroy()
+        return
+    def cancel(self, plane, event=None):
+        if self.callback_cancel:
+            self.callback_cancel(source=self, event=event)
+        self.destroy()
+        return
+
 class KenneyWidgetStyle:
 
     V_ALIGN_MIDDLE = "middle"
@@ -808,6 +857,7 @@ class IncludedSurface:
             surface.blit(new_surface, (current_top_pos[0], current_top_pos[1]))
         return surface
 
+import GameData
 
 class ImagePlane(Plane):
 
@@ -876,4 +926,11 @@ class ImagePlane(Plane):
         return True
 
     def clicked(self, button_name, event=None):
-        print("click! " + str(event))
+        (camera_top_x, camera_top_y) = self.camera_rect.topleft
+        camera_top_x = camera_top_x // Constants.TILE_SIZE[0]
+        camera_top_y = camera_top_y // Constants.TILE_SIZE[1]
+        (pos_x, pos_y) = event.pos
+        pos_x = pos_x // Constants.TILE_SIZE[0] + camera_top_x
+        pos_y = pos_y // Constants.TILE_SIZE[1] + camera_top_y
+        #print("click at {}x{}! ".format(pos_x, pos_y))
+        print(GameData.current_town.tile_map.map[(pos_x, pos_y)])

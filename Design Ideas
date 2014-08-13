@@ -68,7 +68,9 @@ Steps :
 1-	Structure generation between town
 2-	Map generation inside town
 2b - special location inside town
-3-	Travel between town : map generation out
+3-	Travel between town :
+ 3a - be able to move between town directly
+ 3b - go via a map generation out
 4-	Player basic set of characteristics : gold, weight, food
 5-	Player movement in town, player movement between town
 6-	Buy and sell stuff
@@ -78,4 +80,6 @@ Steps :
 10-	Mercenaries
 11-	Robbers & vermins
 12-	Taxes
-13- All with Graphics!
+13- GUI:
+* Icons to start/stop
+* Displayable output bottom of screen

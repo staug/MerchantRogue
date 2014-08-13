@@ -196,7 +196,7 @@ class Tile(object):
         self.floor_type = floor_type
         self.decoration_type = decoration_type
         self.room = None
-        self.characteristics = {}
+        #self.characteristics = {}
         self.position = position
         self.tile_map_owner = tile_map_owner
         self.object_on_tile = []
@@ -215,6 +215,17 @@ class Tile(object):
                 return True
         return self.floor_type in (Tile.WATER, Tile.WALL, Tile.ROCK) or self.decoration_blocking
 
+    def __str__(self):
+
+        part1 = "{}x{} Floor characteristices: {} [blocking: {}] {}".format(
+            self.position[0], self.position[1], self.floor_type, self.blocking, self.decoration_type
+        )
+        part2 = ""
+        if self.object_on_tile:
+            part2 = "\n\t Currently at this location: "
+            for an_object in self.object_on_tile:
+                part2 += "\n\t\t{}".format(an_object)
+        return part1+part2
 
 class TileMap(object):
 
@@ -393,6 +404,17 @@ class TownTileMap(TileMap):
                                                 tile_map, max_x, max_y) != 15:
                         tile_map[place].floor_type = Tile.WALL
 
+            def smooth_walls(self, tile_map, max_x, max_y):
+                #TODO smooth wall is buggy
+                additional_walls = []
+                for place in self.places:
+                    if tile_map[place].floor_type == Tile.FLOOR and \
+                                    self.compute_tile_weight(place[0], place[1], (Tile.WALL),
+                                                tile_map, max_x, max_y) in (6, 12):
+                        additional_walls.append(place)
+                #for place in additional_walls:
+                #    tile_map[place].floor_type = Tile.WALL
+
             def place_door(self, tile_map, max_x, max_y):
                 #nb_doors = random.randint(1, 3)
                 nb_doors = 1
@@ -410,13 +432,13 @@ class TownTileMap(TileMap):
 
             def add_deco(self, tile_map, max_x, max_y):
                 list_doors=[door_def[0] for door_def in self.doors]
-                for i in range(10):
+                for i in range(20):
                     place = random.choice(self.places)
                     weight = self.compute_tile_weight(place[0], place[1], (Tile.FLOOR), tile_map, max_x, max_y)
-                    near_door = (place[0] - 1, place[1] - 1) in list_doors or \
-                                (place[0] - 1, place[1] + 1) in list_doors or \
-                                (place[0] + 1, place[1] - 1) in list_doors or \
-                                (place[0] + 1, place[1] + 1) in list_doors
+                    near_door = (place[0], place[1] - 1) in list_doors or \
+                                (place[0], place[1] + 1) in list_doors or \
+                                (place[0] - 1, place[1]) in list_doors or \
+                                (place[0] + 1, place[1]) in list_doors
                     if not near_door and tile_map[place].floor_type == Tile.FLOOR and not tile_map[place].decoration_type and weight == 15:
                         tile_map[place].decoration_type = random.choice(self.building.decoration_list["1x1"])
                         if tile_map[place].decoration_type[1]:
@@ -436,6 +458,7 @@ class TownTileMap(TileMap):
                 add_shape(random.randint(0, self.max_x - 1), random.randint(0, self.max_y - 1), Tile.ROCK)
             # Main process - Room
             room_placed = []
+            self.rooms = []
             trials = 0
             print("Placing rooms")
             while len(room_placed) < len(self.town.buildings) and trials < 100:
@@ -446,6 +469,7 @@ class TownTileMap(TileMap):
                               self.town.buildings[len(room_placed)])
                 if a_room.can_place(self.map):
                     a_room.carve(self.map, self.max_x, self.max_y)
+                    a_room.smooth_walls(self.map, self.max_x, self.max_y)
                     a_room.place_door(self.map, self.max_x, self.max_y)
                     room_placed.append(a_room)
                 trials += 1
