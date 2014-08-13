@@ -850,11 +850,10 @@ class KenneyWidgetButton(KenneyWidget, KenneyWidgetLabel):
 
 class KenneyOptionButton(KenneyWidget, KenneyWidgetLabel):
     # TODO: change this to use Kenney icons?
-    # TODO: optimize a bit?
     """
     A specific button for a list of selection. Change color when selected.
     """
-    def __init__(self, callback, width=None, height=None, style=None, label=None):
+    def __init__(self, callback, width=None, height=None, style=None):
         """
         Initialise the Button.
         style is an instance of KenneyStyle. If omitted, GREY_BUTTON_STYLE will be
@@ -867,17 +866,12 @@ class KenneyOptionButton(KenneyWidget, KenneyWidgetLabel):
         if not height:
             height = style.default_height
 
-        if label is not None:
-            possible_surface = style.font.render(label, True, style.text_color)
-            width = max(possible_surface.get_rect().width + 20, width)
-            height = max(possible_surface.get_rect().height + 10, height)
-
         self.is_clicked = False
         # Initialise self.background
 
         KenneyWidget.__init__(self, style, width, height=height)
         # Now call base class.
-        KenneyWidgetLabel.__init__(self, text=label, width=width, height=height, style=style)
+        KenneyWidgetLabel.__init__(self, width=width, height=height, style=style)
 
         # Overwrite Plane base class attributes
         alternate_style = KENNEY_WIDGET_STYLE_BLUE
@@ -886,30 +880,19 @@ class KenneyOptionButton(KenneyWidget, KenneyWidgetLabel):
         self.alternate_background = KenneyWidget(alternate_style, width, height=height).background
 
         self.highlight = True
-        self.clicked_counter = 4
-        self.redraw()
+        self.redraw(force=True)
         return
 
-    def redraw(self):
+    def redraw(self, force=False):
         """Conditionally redraw the Button.
         """
         # Partly copied from Label.redraw()
-        if self.text != self.cached_text:
+        if force:
             # Copy, don't blit, taking care for transparency
             if self.is_clicked:
                 self.image = self.alternate_background.copy()
             else:
                 self.image = self.background.copy()
-            # Text is centered on rect.
-            fontsurf = self.style.font.render(self.text, True, self.style.text_color)
-            centered_rect = fontsurf.get_rect()
-
-            # Get a neutral center of self.rect
-            centered_rect.center = pygame.Rect((0, 0), self.rect.size).center
-
-            # Anticipate a drop shadow: move the text up a bit
-            centered_rect.move_ip(0, -1)
-            self.image.blit(fontsurf, centered_rect)
 
             # Force redraw in render()
             self.last_rect = None
@@ -920,11 +903,6 @@ class KenneyOptionButton(KenneyWidget, KenneyWidgetLabel):
         """
         Change color if clicked, then call the base class method.
         """
-        if self.clicked_counter:
-            self.clicked_counter = self.clicked_counter - 1
-            if not self.clicked_counter:
-                # Just turned zero, restore original background
-                self.current_color = self.background_color
         KenneyWidgetLabel.update(self)
         return
 
@@ -933,12 +911,8 @@ class KenneyOptionButton(KenneyWidget, KenneyWidgetLabel):
            Changes the Button color for some frames and calls the base class implementation.
         """
         self.is_clicked = not self.is_clicked
-        self.cached_text = None
         if button_name == "left":
-            self.clicked_counter = 4
-            # Half-bright
-            self.current_color = list(map(lambda i: int(i * 0.5), self.current_color))
-            self.redraw()
+            self.redraw(force=True)
         return
 
 
