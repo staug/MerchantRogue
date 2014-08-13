@@ -216,7 +216,6 @@ class Tile(object):
         return self.floor_type in (Tile.WATER, Tile.WALL, Tile.ROCK) or self.decoration_blocking
 
     def __str__(self):
-
         part1 = "{}x{} Floor characteristices: {} [blocking: {}] {}".format(
             self.position[0], self.position[1], self.floor_type, self.blocking, self.decoration_type
         )
