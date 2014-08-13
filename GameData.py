@@ -10,3 +10,4 @@ town_graph = None
 current_town = None
 
 # Graphical Objects
+display=None

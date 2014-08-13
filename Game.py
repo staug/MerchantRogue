@@ -133,6 +133,9 @@ class Game():
         """
         pass
 
+def test(**kwargs):
+    print("Dummy : {}".format(kwargs))
+
 if __name__ == '__main__':
 
     # INITIALIZATION ....
@@ -144,7 +147,7 @@ if __name__ == '__main__':
     # Step 2 - Main Game Screen
     print("Creating surface")
     screen = planes.Display(Constants.GAME_WINDOW_SIZE)
-
+    GameData.display = screen
     Game.start_new_game(20)
 
     # Step 3 - Finish the graphical init for this town.
@@ -165,8 +168,8 @@ if __name__ == '__main__':
 
     #pygame.mouse.set_cursor(*pygame.cursors.diamond)
 
-    screen.sub(GuiElements.KenneyPopupLabelCancel("This is a very very long message.\nI test wrapper.\nAgain a very very long sentecne that never ends\nShort.", style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
-
+    #screen.sub(GuiElements.KenneyPopupLabelCancel("This is a very very long message.\nI test wrapper.\nAgain a very very long sentecne that never ends\nShort.", style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
+    #screen.sub(GuiElements.KenneyGetStringDialog("Enter your very big name", test, style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
     while True:
 
         player_took_action = False
@@ -184,36 +187,37 @@ if __name__ == '__main__':
                 event_box.rect.centerx=screen.rect.centerx
             if event.type == Constants.DEBUG_EVENT:
                 print(event.message)
-            if event.type == KEYDOWN and event.key == K_RIGHT:
-                GameData.player.move(1, 0)
-                player_took_action = True
-                main_image.move_camera_tile_center(GameData.player.position_on_tile)
-            if event.type == KEYDOWN and event.key == K_UP:
-                GameData.player.move(0, -1)
-                player_took_action = True
-                main_image.move_camera_tile_center(GameData.player.position_on_tile)
-            if event.type == KEYDOWN and event.key == K_DOWN:
-                GameData.player.move(0, 1)
-                player_took_action = True
-                main_image.move_camera_tile_center(GameData.player.position_on_tile)
-            if event.type == KEYDOWN and event.key == K_LEFT:
-                GameData.player.move(-1, 0)
-                player_took_action = True
-                main_image.move_camera_tile_center(GameData.player.position_on_tile)
-            if event.type == KEYDOWN and event.key == K_p:
-                GameData.player.pickup()
-                player_took_action = True
-            if event.type == KEYDOWN and event.key == K_i:
-                Util.Event(GameData.player.list_container())
-                player_took_action = True
-            if event.type == KEYDOWN and event.key == K_t:
-                main_image.move_camera(y=-1)
-            if event.type == KEYDOWN and event.key == K_g:
-                main_image.move_camera(y=1)
-            if event.type == KEYDOWN and event.key == K_f:
-                main_image.move_camera(x=-1)
-            if event.type == KEYDOWN and event.key == K_h:
-                main_image.move_camera(x=1)
+            if event.type == KEYDOWN:  #TODO: make sure no extra text box is active?
+                if event.type == KEYDOWN and event.key == K_RIGHT:
+                    GameData.player.move(1, 0)
+                    player_took_action = True
+                    main_image.move_camera_tile_center(GameData.player.position_on_tile)
+                if event.type == KEYDOWN and event.key == K_UP:
+                    GameData.player.move(0, -1)
+                    player_took_action = True
+                    main_image.move_camera_tile_center(GameData.player.position_on_tile)
+                if event.type == KEYDOWN and event.key == K_DOWN:
+                    GameData.player.move(0, 1)
+                    player_took_action = True
+                    main_image.move_camera_tile_center(GameData.player.position_on_tile)
+                if event.type == KEYDOWN and event.key == K_LEFT:
+                    GameData.player.move(-1, 0)
+                    player_took_action = True
+                    main_image.move_camera_tile_center(GameData.player.position_on_tile)
+                if event.type == KEYDOWN and event.key == K_p:
+                    GameData.player.pickup()
+                    player_took_action = True
+                if event.type == KEYDOWN and event.key == K_i:
+                    Util.Event(GameData.player.list_container())
+                    player_took_action = True
+                if event.type == KEYDOWN and event.key == K_t:
+                    main_image.move_camera(y=-1)
+                if event.type == KEYDOWN and event.key == K_g:
+                    main_image.move_camera(y=1)
+                if event.type == KEYDOWN and event.key == K_f:
+                    main_image.move_camera(x=-1)
+                if event.type == KEYDOWN and event.key == K_h:
+                    main_image.move_camera(x=1)
 
         if player_took_action:
             for npc in GameData.current_town.npc_list:

@@ -183,15 +183,23 @@ class KenneyContainer(planes.gui.Container):
     H_ALIGN_LEFT = "left"
     H_ALIGN_RIGHT = "right"
 
-    def __init__(self, name, kenney_style, preferred_size=(0, 0), normalize_size=True, ignore_last_group_height=False):
+    def __init__(self,
+                 name=None,
+                 style=None,
+                 preferred_size=(0, 0),
+                 normalize_size=True,
+                 ignore_last_group_height=False,
+                 pos=(0, 0)):
         """Initialise.
            style is an instance of kenney style, which should hold the image name as well as the
            default margins & paddings...
         """
         # Call base
-        planes.gui.Container.__init__(self, name, kenney_style.padding_v)
+        if not name:
+            name=str(id(self))
+        planes.gui.Container.__init__(self, name, style.padding_v)
         # save main arguments
-        self.style = kenney_style
+        self.style = style
         self.background = None
         self.preferred_size = preferred_size
 
@@ -201,6 +209,7 @@ class KenneyContainer(planes.gui.Container):
 
         self.normalize_size = normalize_size # indicate if we should normalize all widget size to the biggest
         self.ignore_last_group_height = ignore_last_group_height
+        self.rect.topleft = pos
         return
 
     def _resize(self):
@@ -225,7 +234,9 @@ class KenneyContainer(planes.gui.Container):
                 group_horizontal[-1].append([name, required_height, required_width])
 
         print("GROUP: " + str(group_horizontal))
-        max_widget_width = max_widget_height = 0
+
+        max_normalized_widget_width = max_widget_height = 0
+        max_line_width = 0
         for index, widget_group in enumerate(group_horizontal):
             widget_group_width = 0
             for widget in widget_group:
@@ -233,9 +244,14 @@ class KenneyContainer(planes.gui.Container):
                     if max_widget_height < widget[1]:
                         max_widget_height = widget[1]
                 widget_group_width += widget[2]
-            normalized_widget_width = (widget_group_width + (len(widget_group) - 1) * self.style.padding_h) // len(widget_group)
-            if max_widget_width < normalized_widget_width:
-                max_widget_width = normalized_widget_width
+            current_line_width = widget_group_width + (len(widget_group) - 1) * self.style.padding_h
+            normalized_widget_width = widget_group_width // len(widget_group)
+            if max_normalized_widget_width < normalized_widget_width:
+                max_normalized_widget_width = normalized_widget_width
+            if current_line_width > max_line_width:
+                max_line_width = current_line_width
+
+        print("Max widget width: " + str(max_normalized_widget_width))
 
         ypos = margin_top
         max_right_pos = 0
@@ -243,13 +259,13 @@ class KenneyContainer(planes.gui.Container):
         for widget_group in group_horizontal:
 
             xpos = margin_left
-            for widget in widget_group:
+            for index, widget in enumerate(widget_group):
                 name = widget[0]
                 required_height = widget[1]
                 required_width = widget[2]
                 if self.normalize_size:
                     required_height = max_widget_height
-                    required_width = (max_widget_width - (len(widget_group) - 1) * self.style.padding_h) // len(widget_group)
+                    required_width = max_normalized_widget_width
                 (h_plane_align,
                  v_plane_align,
                  fix_width,
@@ -263,25 +279,27 @@ class KenneyContainer(planes.gui.Container):
                 elif v_plane_align == KenneyContainer.V_ALIGN_BOTTOM:
                     self.subplanes[name].rect.bottom = ypos + required_height
 
+                one_widget_space = max_line_width // len(widget_group)
                 if h_plane_align == KenneyContainer.H_ALIGN_CENTER:
-                    self.subplanes[name].rect.centerx = xpos + int(required_width / 2)
+                    self.subplanes[name].rect.centerx = xpos + int(one_widget_space / 2)
                 elif h_plane_align == KenneyContainer.H_ALIGN_LEFT:
                     self.subplanes[name].rect.left = xpos
                 elif h_plane_align == KenneyContainer.H_ALIGN_RIGHT:
-                    self.subplanes[name].rect.right = xpos + required_width
+                    self.subplanes[name].rect.right = xpos + one_widget_space
 
-                xpos += (required_width + self.style.padding_h)
+                xpos += one_widget_space
 
                 if self.subplanes[name].rect.right > max_right_pos:
                     max_right_pos = self.subplanes[name].rect.right
 
             if self.normalize_size:
                 ypos += (max_widget_height + self.style.padding_v)
-            elif self.normalize_position:
+            else:
                 ypos += ([max(widget[1]) for widget in widget_group] + self.style.padding_v)
 
         self.rect.height = max(self.preferred_size[1], ypos + margin_bottom)
         self.rect.width = max(self.preferred_size[0], max_right_pos + margin_right)
+        print("Rect width: " + str(self.rect.width))
 
     def render_background(self):
         if self.style.is_included:
@@ -383,7 +401,8 @@ class KenneyPopupLabel(KenneyContainer):
                  style=None,
                  button_style=None,
                  message_h_align=KenneyContainer.H_ALIGN_CENTER,
-                 callback=None):
+                 callback=None,
+                 pos=(0, 0)):
         """
         Initialize the popup
         :param message: the message to be displayed, will be splitted at "\n"
@@ -397,7 +416,7 @@ class KenneyPopupLabel(KenneyContainer):
             style = KENNEY_CONTAINER_STYLE_INCLUDED
         self.callback = callback
 
-        KenneyContainer.__init__(self, str(id(self)), style, preferred_size=(10, 20), ignore_last_group_height=True)
+        KenneyContainer.__init__(self, style=style, preferred_size=(10, 20), ignore_last_group_height=True, pos=pos)
 
         lines = message.split("\n")
         for line_no in range(len(lines)):
@@ -428,7 +447,8 @@ class KenneyPopupLabelCancel(KenneyContainer):
                  button_style=None,
                  message_h_align=KenneyContainer.H_ALIGN_CENTER,
                  callback_ok=None,
-                 callback_cancel=None):
+                 callback_cancel=None,
+                 pos=(0, 0)):
         """
         Initialize the popup
         :param message: the message to be displayed, will be splitted at "\n"
@@ -443,7 +463,7 @@ class KenneyPopupLabelCancel(KenneyContainer):
         self.callback_ok = callback_ok
         self.callback_cancel = callback_cancel
 
-        KenneyContainer.__init__(self, str(id(self)), style, preferred_size=(10, 20), ignore_last_group_height=True)
+        KenneyContainer.__init__(self, style=style, preferred_size=(10, 20), ignore_last_group_height=True, pos=pos)
 
         lines = message.split("\n")
         for line_no in range(len(lines)):
@@ -462,6 +482,60 @@ class KenneyPopupLabelCancel(KenneyContainer):
         if self.callback_cancel:
             self.callback_cancel(source=self, event=event)
         self.destroy()
+        return
+
+
+class KenneyGetStringDialog(KenneyContainer):
+    """A combination of KenneyContainer, Label, TextBox and Button that asks the user for a string.
+    """
+
+    def __init__(self, prompt, callback, numberline=1, width=None, style=None, button_style=None, pos=(0, 0)):
+
+        if not style:
+            style = KENNEY_CONTAINER_STYLE_INCLUDED
+        if not button_style:
+            button_style = KENNEY_WIDGET_STYLE_BLUE
+        # Base class __init__()
+        KenneyContainer.__init__(self, style=style, ignore_last_group_height=True, pos=pos)
+
+        self.draggable = False
+
+        # Adapted from planes.gui.GetStringDialog
+        self.callback = callback
+        self.sub(KenneyWidgetLabel(prompt))
+        # text box - compute the argument.
+        rect = button_style.font.render(prompt, True, button_style.text_color).get_rect()
+        if width:
+            rect.width = width
+        rect.height = numberline * rect.height + style.padding_v * (numberline - 1)
+        self.textbox = planes.gui.TextBox("textbox", pygame.Rect((0, 0), rect.size), return_callback=self.return_key)
+        self.sub(self.textbox, stack_horizontal=True)
+        self.sub(KenneyWidgetButton(self.ok, label="OK", style=button_style))
+        GameData.display.key_sensitive(self.textbox)
+
+        return
+
+    def ok(self, plane, event=None):
+        """Button callback to destroy the GetStringDialog and call GetStringDialog.callback(string).
+        """
+
+        # Deactivate to lose the cursor
+        self.textbox.deactivate()
+
+        callback = self.callback
+        string = self.textbox.text
+        self.destroy()
+        callback(text=string)
+
+        return
+
+    def return_key(self, text, event=None):
+        """Return key callback to destroy the GetStringDialog and call GetStringDialog.callback(string).
+        """
+
+        callback = self.callback
+        self.destroy()
+        callback(text=text)
         return
 
 class KenneyWidgetStyle:
