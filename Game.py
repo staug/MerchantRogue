@@ -165,7 +165,7 @@ if __name__ == '__main__':
 
     #pygame.mouse.set_cursor(*pygame.cursors.diamond)
 
-    #screen.sub(GuiElements.KenneyPopupLabel("This is a very very long message.\nI test wrapper.\nAgain a very very long sentecne that never ends\nShort.", style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
+    screen.sub(GuiElements.KenneyPopupLabelCancel("This is a very very long message.\nI test wrapper.\nAgain a very very long sentecne that never ends\nShort.", style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
 
     while True:
 
@@ -178,7 +178,7 @@ if __name__ == '__main__':
                 raise SystemExit
             if event.type == Constants.DISPLAY_EVENT:
                 print(event.message)
-                event_box = GuiElements.KenneyPopupLabel(event.message)
+                event_box = GuiElements.KenneyPopupLabelCancel(event.message)
                 screen.sub(event_box)
                 event_box.rect.top = 100
                 event_box.rect.centerx=screen.rect.centerx

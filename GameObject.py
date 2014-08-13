@@ -64,8 +64,7 @@ class GameObject():
         else:
             self.regular_value = random.randint(1, 100)
 
-        if action_when_player:
-            self.action_when_player = action_when_player
+        self.action_when_player = action_when_player
 
         if self.usable_part:
             self.usable_part.owner=self
@@ -96,7 +95,7 @@ class GameObject():
     def call_action(self, **kwargs):
         if self.action_when_player:
             return self.action_when_player(source=self, **kwargs)
-        return True
+        return []
 
     def __str__(self):
         return self.name
