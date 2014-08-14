@@ -9,3 +9,5 @@ TileMap:
 GUI:
 * If a textbox is moved, then its text is not shown
 * The text put in a text box also impacts the screen
+* The Kenney Container doesn't draw things as it should: h_align is not working
+* The Kenney Container doesn't draw things as it should: resize problem

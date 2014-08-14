@@ -170,7 +170,7 @@ class KenneyContainer(planes.gui.Container):
     def __init__(self,
                  name=None,
                  style=None,
-                 preferred_size=(0, 0),
+                 preferred_size=(10, 10),
                  normalize_size=True,
                  ignore_last_group_height=False,
                  pos=(0, 0)):
@@ -185,6 +185,8 @@ class KenneyContainer(planes.gui.Container):
         # save main arguments
         self.style = style
         self.background = None
+        if not (preferred_size and preferred_size[0] and preferred_size[1]):
+            preferred_size = (10, 10)
         self.preferred_size = preferred_size
 
         self.draggable = True
@@ -466,18 +468,58 @@ class KenneyPopupLabelCancel(KenneyContainer):
 
 
 class KenneyPopupOption(KenneyContainer):
-    #TODO
     """
-    A popup that displays a message (wrapped) with a OK button.
-    It is destroyed when OK is clicked, and an optional callback is called.
-    The message will be wrapped at newline characters.
+    Display a list of choice that are selectable
+    It is destroyed when OK or Cancel is clicked, and the callback is called with the selected object(s).
     """
+    class ButtonGroup():
+        """
+        The button group governs group of selection, like a RadioGroup would do.
+        """
+        def __init__(self, multi_allowed=False):
+            self.object_of_group = []
+            self.button_of_group = []
+            self.multi_allowed = multi_allowed
+            return
+
+        def add_button(self, button, object_controlled):
+            self.object_of_group.append(object_controlled)
+            self.button_of_group.append(button)
+            return
+
+        def notify(self, button_notifier):
+            """
+            This function is used when one button is changed, takes care of the multi selection.
+            """
+            if not self.multi_allowed:
+                for button in self.button_of_group:
+                    if button.is_selected and button.name != button_notifier.name:
+                        button.is_selected = False
+                        button.redraw(force=True)
+            return
+
+        def get_selected_objects(self):
+            """
+            :return all the object which button has the status selected
+            """
+            objects = []
+            for index, button in enumerate(self.button_of_group):
+                    if button.is_selected:
+                        objects.append(self.object_of_group[index])
+            return objects
+
 
     def __init__(self,
+                 group_of_options,
+                 selected_option_indexes=None,
+                 multiple_selection_allowed=None,
+                 use_image=False,
+                 width=None,
+                 height=None,
                  style=None,
                  button_style=None,
-                 message_h_align=KenneyContainer.H_ALIGN_CENTER,
-                 callback=None,
+                 callback_ok=None,
+                 callback_cancel=None,
                  pos=(0, 0)):
         """
         Initialize the popup
@@ -490,20 +532,56 @@ class KenneyPopupOption(KenneyContainer):
         """
         if not style:
             style = Constants.DEFAULT_CONTAINER_STYLE
-        self.callback = callback
+        if not button_style:
+            button_style = Constants.DEFAULT_WIDGET_STYLE
+        self.callback_ok = callback_ok
+        self.callback_cancel = callback_cancel
 
-        KenneyContainer.__init__(self, style=style, preferred_size=(10, 20), ignore_last_group_height=True, pos=pos)
-
-        self.sub(KenneyOptionButton(style=button_style))
+        KenneyContainer.__init__(self,
+                                 style=style,
+                                 preferred_size=(width, height),
+                                 ignore_last_group_height=True,
+                                 pos=pos)
+        # the options are a list of list
+        self.button_groups = []
+        for group_index, options in enumerate(group_of_options):
+            group = KenneyPopupOption.ButtonGroup()
+            if multiple_selection_allowed and multiple_selection_allowed[group_index]:
+                group.multi_allowed = True
+            self.button_groups.append(group)
+            for option_index, option in enumerate(options):
+                selected = False
+                if selected_option_indexes and selected_option_indexes[group_index] == option_index:
+                    selected = True
+                button = KenneyWidgetOptionButton(group=group, use_image=use_image,
+                                                  style=button_style, selected=selected)
+                self.button_groups[-1].add_button(button, option)
+                self.sub(button)
+                self.sub(KenneyWidgetLabel(str(option)), stack_horizontal=True)
+        width = button_style.get_font_size_for("Cancel")[0]
+        self.sub(KenneyWidgetButton(self.ok, label="OK", style=button_style, width=width))
+        self.sub(KenneyWidgetButton(self.cancel, label="Cancel", style=button_style, width=width),
+                 stack_horizontal=True)
 
         return
 
     def ok(self, plane, event=None):
-        """
-        Button clicked callback which destroys the OkBox.
-        """
-        if self.callback:
-            self.callback(source=self, event=event)
+        if self.callback_ok:
+            object_list = []
+            for group in self.button_groups:
+                for object_selected in group.get_selected_objects():
+                    object_list.append(object_selected)
+            self.callback_ok(source=self, event=event, object_selected=object_list)
+        self.destroy()
+        return
+
+    def cancel(self, plane, event=None):
+        if self.callback_cancel:
+            object_list = []
+            for group in self.button_groups:
+                for object_selected in group.get_selected_objects():
+                    object_list.append(object_selected)
+            self.callback_cancel(source=self, event=event, object_selected=object_list)
         self.destroy()
         return
 
@@ -614,6 +692,20 @@ class KenneyWidgetStyle:
         if font:
             a_font = Constants.FONT_FOLDER + font + ".ttf"
         self.font = pygame.font.Font(a_font, 12)
+
+        return
+
+    def get_font_size_for(self, text):
+        """
+        Compute the space occupied by the text. If no font exists, the default is return
+        :param text: the text which space we want to evaluate
+        :return: a size tuple.
+        """
+        if self.font:
+            return self.font.render(text, True, self.text_color).get_rect().size
+        else:
+            dimensions = (self.default_width, self.default_height)
+            return dimensions
 
 
 
@@ -897,8 +989,7 @@ class KenneyWidgetIconButton(KenneyWidget, KenneyWidgetLabel):
         KenneyWidgetLabel.clicked(self, button_name, event=event)
         return
 
-
-class KenneyOptionButton(KenneyWidget, KenneyWidgetLabel):
+class KenneyWidgetOptionButton(KenneyWidget, KenneyWidgetLabel):
     """
     A specific button to be used for a list of selection, which keeps in memory a state.
     Change color when selected when it is selected.
@@ -928,6 +1019,7 @@ class KenneyOptionButton(KenneyWidget, KenneyWidgetLabel):
             width = self.icon_image.get_rect().width
             height = self.icon_image.get_rect().height
         else:
+            self.icon_image = None
             if not width:
                 width = style.default_width
             if not height:
