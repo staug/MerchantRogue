@@ -6,7 +6,7 @@ __author__ = 'Tangil'
 import planes
 import planes.gui
 import pygame
-
+import GameData
 
 class TradePlane(planes.gui.Container):
     """
@@ -113,17 +113,8 @@ class TradePlane(planes.gui.Container):
 
 class KenneyContainerStyle:
 
-    def __init__(self,
-                 margin_top=10,
-                 margin_left=10,
-                 margin_bottom=10,
-                 margin_right=10,
-                 color=None,
-                 background_color=None,
-                 single_last_widget=False,
-                 padding_v=5,
-                 padding_h=5
-                 ):
+    def __init__(self, margin_top=10, margin_left=10, margin_bottom=10, margin_right=10, color=None,
+                 background_color=None, single_last_widget_group=False, padding_v=5, padding_h=5):
         """
         Basic style for all specific containers
         :param margin_top: the container top margin (impacts sub container placement). Default 10.
@@ -132,7 +123,7 @@ class KenneyContainerStyle:
         :param margin_right: the container right margin (impacts sub container placement). Default 10.
         :param color: the color of teh foreground
         :param background_color: the color of the background. If provided, an included surface will be drawn
-        :param single_last_widget: make specific room for the last widget
+        :param single_last_widget_group: make specific room for the last widget
         :param padding_v: the vertical padding between widgets
         :param padding_h: the horizontal padding between widgets
         :param font: filename of the font. It will be taken from the font folder.
@@ -151,17 +142,10 @@ class KenneyContainerStyle:
         if background_color:
             self.background_color = background_color
             self.is_included = True
-        self.single_last_widget = single_last_widget
+        self.single_last_widget = single_last_widget_group
 
 
-# Default container styles
-KENNEY_CONTAINER_STYLE_INCLUDED = KenneyContainerStyle(
-    color=Constants.KENNEY_COLOR_BEIGE_LIGHT,
-    background_color=Constants.KENNEY_COLOR_BEIGE,
-    single_last_widget=True)
 
-KENNEY_CONTAINER_STYLE_SCALED = KenneyContainerStyle(
-    color=Constants.KENNEY_COLOR_BEIGE_LIGHT)
 
 class KenneyContainer(planes.gui.Container):
     """A planes.gui.Container with variable width and height and a Kenney background.
@@ -300,7 +284,7 @@ class KenneyContainer(planes.gui.Container):
     def render_background(self):
         if self.style.is_included:
             list_image = [Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "panel_" + self.style.background_color + ".png",
-                          Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "panel_" + self.style.color + ".png"]
+                          Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "panelInset_" + self.style.color + ".png"]
             if self.style.single_last_widget and len(self.subplanes) > 0:
                 # Not: this adds an extra 10 margin all around!
                 for name in self.subplanes_list:
@@ -409,7 +393,7 @@ class KenneyPopupLabel(KenneyContainer):
         :return:
         """
         if not style:
-            style = KENNEY_CONTAINER_STYLE_INCLUDED
+            style = Constants.DEFAULT_CONTAINER_STYLE
         self.callback = callback
 
         KenneyContainer.__init__(self, style=style, preferred_size=(10, 20), ignore_last_group_height=True, pos=pos)
@@ -455,7 +439,7 @@ class KenneyPopupLabelCancel(KenneyContainer):
         :return:
         """
         if not style:
-            style = KENNEY_CONTAINER_STYLE_INCLUDED
+            style = Constants.DEFAULT_CONTAINER_STYLE
         self.callback_ok = callback_ok
         self.callback_cancel = callback_cancel
 
@@ -505,7 +489,7 @@ class KenneyPopupOption(KenneyContainer):
         :return:
         """
         if not style:
-            style = KENNEY_CONTAINER_STYLE_INCLUDED
+            style = Constants.DEFAULT_CONTAINER_STYLE
         self.callback = callback
 
         KenneyContainer.__init__(self, style=style, preferred_size=(10, 20), ignore_last_group_height=True, pos=pos)
@@ -530,9 +514,9 @@ class KenneyGetStringDialog(KenneyContainer):
     def __init__(self, prompt, callback, numberline=1, width=None, style=None, button_style=None, pos=(0, 0)):
 
         if not style:
-            style = KENNEY_CONTAINER_STYLE_INCLUDED
+            style = Constants.DEFAULT_CONTAINER_STYLE
         if not button_style:
-            button_style = KENNEY_WIDGET_STYLE_BLUE
+            button_style = Constants.DEFAULT_WIDGET_STYLE
         # Base class __init__()
         KenneyContainer.__init__(self, style=style, ignore_last_group_height=True, pos=pos)
 
@@ -631,9 +615,7 @@ class KenneyWidgetStyle:
             a_font = Constants.FONT_FOLDER + font + ".ttf"
         self.font = pygame.font.Font(a_font, 12)
 
-# Default widget styles
-KENNEY_WIDGET_STYLE_BLUE = KenneyWidgetStyle(color=Constants.KENNEY_COLOR_BLUE, font="dolphin")
-KENNEY_WIDGET_STYLE_BROWN = KenneyWidgetStyle(color=Constants.KENNEY_COLOR_BROWN, font="dolphin")
+
 
 class KenneyWidget:
     """
@@ -659,19 +641,20 @@ class KenneyWidget:
             self.background = pygame.Surface((width, height), flags = pygame.SRCALPHA).convert_alpha()
             self.background.blit(pygame.transform.smoothscale(KenneyWidgetStyle[style.background_image_filename].copy, (width, height)))
 
+
 class KenneyWidgetLabel(planes.Plane):
     """
     A specific label object, able to follow n object with/without an attribute
     """
 
-    def __init__(self, text=None, width=None, height=None, style=None, follow_object=None, follow_attribute=None):
+    def __init__(self, text=None, width=None, height=None, style=None, follow_object=None, follow_attribute=None, pos=(0, 0)):
         """Initialise the Label.
            text is the text to be written on the Label. If text is None, it is
            replaced by an empty string.
         """
         # Call base class init
         if not style:
-            style = KENNEY_WIDGET_STYLE_BLUE
+            style = Constants.DEFAULT_WIDGET_STYLE
         self.style = style
 
         required_width = style.default_width
@@ -699,7 +682,7 @@ class KenneyWidgetLabel(planes.Plane):
             required_height = max(height, required_height)
 
         planes.Plane.__init__(self, str(id(self)),
-                              pygame.Rect((0, 0), (required_width, required_height)), draggable=False, grab=False)
+                              pygame.Rect(pos, (required_width, required_height)), draggable=False, grab=False)
 
         self.cached_text = None
         self.background_color = self.cached_color = self.current_color = (0, 0, 0, 0)
@@ -716,7 +699,6 @@ class KenneyWidgetLabel(planes.Plane):
         if test_attribute:
             # if we follow an object or an attribute, then we overwrite the text
             self.text = test_attribute
-
         self.redraw()
         planes.Plane.update(self)
         return
@@ -734,13 +716,10 @@ class KenneyWidgetLabel(planes.Plane):
             centered_rect = fontsurf.get_rect()
 
             # Get a neutral center of self.rect
-            #
             centered_rect.center = pygame.Rect((0, 0), self.rect.size).center
-
             self.image.blit(fontsurf, centered_rect)
 
             # Force redraw in render()
-            #
             self.last_rect = None
 
             self.cached_text = self.text
@@ -760,9 +739,9 @@ class KenneyWidgetLabel(planes.Plane):
 
 class KenneyWidgetButton(KenneyWidget, KenneyWidgetLabel):
     """
-    A planes.gui.Button enhanced with Kenney ;-).
+    A planes.gui.Button enhanced with Kenney, showing a scaled surface as background.
     """
-    def __init__(self, callback, width=None, height=None, style=None, label=None):
+    def __init__(self, callback, width=None, height=None, style=None, label=None, pos=(0, 0)):
         """Initialise the Button.
 
            label is the Text to be written on the button.
@@ -774,7 +753,7 @@ class KenneyWidgetButton(KenneyWidget, KenneyWidgetLabel):
            used.
         """
         if not style:
-            style = KENNEY_WIDGET_STYLE_BLUE
+            style = Constants.DEFAULT_WIDGET_STYLE
         if not width:
             width = style.default_width
         if not height:
@@ -788,7 +767,7 @@ class KenneyWidgetButton(KenneyWidget, KenneyWidgetLabel):
         # Initialise self.background
         KenneyWidget.__init__(self, style, width, height=height)
         # Now call base class.
-        KenneyWidgetLabel.__init__(self, text=label, width=width, height=height, style=style)
+        KenneyWidgetLabel.__init__(self, text=label, width=width, height=height, style=style, pos=pos)
 
         # Overwrite Plane base class attributes
         self.left_click_callback = callback
@@ -848,36 +827,131 @@ class KenneyWidgetButton(KenneyWidget, KenneyWidgetLabel):
         KenneyWidgetLabel.clicked(self, button_name, event=event)
         return
 
-class KenneyOptionButton(KenneyWidget, KenneyWidgetLabel):
-    # TODO: change this to use Kenney icons?
+class KenneyWidgetIconButton(KenneyWidget, KenneyWidgetLabel):
     """
-    A specific button for a list of selection. Change color when selected.
+    A planes.gui.Button enhanced diplaying a single image and no text.
+    If width/height are not passed, the image dimensions are used, else the image is resized.
     """
-    def __init__(self, callback, width=None, height=None, style=None):
+    IMAGE_DICT = {}
+
+    def __init__(self, callback, image_source_filename, width=None, height=None, pos=(0, 0)):
         """
         Initialise the Button.
-        style is an instance of KenneyStyle. If omitted, GREY_BUTTON_STYLE will be
-        used.
         """
-        if not style:
-            style = KENNEY_WIDGET_STYLE_BLUE
+
+        dimension = (width, height)
         if not width:
-            width = style.default_width
-        if not height:
-            height = style.default_height
+            dimension = None
+        self.icon_image = ScaledImage.render(image_source_filename, target_dimension=dimension)
+        (width, height) = self.icon_image.get_rect().size
 
-        self.is_clicked = False
         # Initialise self.background
-
-        KenneyWidget.__init__(self, style, width, height=height)
+        KenneyWidget.__init__(self, Constants.DEFAULT_WIDGET_STYLE, width, height=height)
         # Now call base class.
-        KenneyWidgetLabel.__init__(self, width=width, height=height, style=style)
+        KenneyWidgetLabel.__init__(self, width=width, height=height, pos=pos)
 
         # Overwrite Plane base class attributes
+        self.text = " "
+        self.background = self.icon_image
+        self.left_click_callback = callback
+        self.highlight = True
+        self.clicked_counter = 0
+        self.redraw()
+        return
+
+    def redraw(self):
+        """Conditionally redraw the Button.
+        """
+        # Partly copied from Label.redraw()
+        if self.text != self.cached_text:
+            # Copy, don't blit, taking care for transparency
+            self.image = self.background.copy()
+            self.last_rect = None
+            self.cached_text = self.text
+        return
+
+    def update(self):
+        # """
+        # Change color if clicked, then call the base class method.
+        # """
+        # if self.clicked_counter:
+        #     self.clicked_counter = self.clicked_counter - 1
+        #     if not self.clicked_counter:
+        #         # Just turned zero, restore original background
+        #         self.current_color = self.background_color
+        KenneyWidgetLabel.update(self)
+
+        return
+
+    def clicked(self, button_name, event=None):
+        """Plane standard method, called when there is a MOUSEDOWN event on this plane.
+           Changes the Button color for some frames and calls the base class implementation.
+        """
+        if button_name == "left":
+            self.clicked_counter = 4
+            # Half-bright
+            self.current_color = list(map(lambda i: int(i * 0.5), self.current_color))
+            self.redraw()
+
+        # Call base class implementation which will call the callback
+        KenneyWidgetLabel.clicked(self, button_name, event=event)
+        return
+
+
+class KenneyOptionButton(KenneyWidget, KenneyWidgetLabel):
+    """
+    A specific button to be used for a list of selection, which keeps in memory a state.
+    Change color when selected when it is selected.
+    """
+    def __init__(self, group=None, use_image=False, width=None, height=None, style=None, pos=(0, 0), selected=False):
+        """
+        Initialize the button
+        :param use_image: if set to True, one of the Kenney icon check will be used, otherwise a pannel will be used
+        :param width: the width, if not set the image size will be used, else the default style
+        :param height: the height, if not set the image size will be used, else the default style
+        :param style: the style - used for color (front and background).
+        :param pos: the position for the image
+        :param group: the group for the button. The group is notified when the button is clicked
+        :param selected: the starting value for this button
+
+        :return:
+        """
+
+        if not style:
+            style = Constants.DEFAULT_WIDGET_STYLE
+        if use_image:
+            dimensions = None
+            image_name = Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "iconCheck_" + style.color + ".png"
+            if width and height:
+                dimensions = (width, height)
+            self.icon_image = ScaledImage.render(image_name, dimensions)
+            width = self.icon_image.get_rect().width
+            height = self.icon_image.get_rect().height
+        else:
+            if not width:
+                width = style.default_width
+            if not height:
+                height = style.default_height
+
+        self.is_selected = selected
+        self.group = group
+        # Initialise self.background
+        KenneyWidget.__init__(self, style, width, height=height)
+        # Now call base class.
+        KenneyWidgetLabel.__init__(self, width=width, height=height, style=style, pos=pos)
+
+        # Overwrite Plane base class attributes
+        if self.icon_image:
+            self.background = self.icon_image
         alternate_style = KENNEY_WIDGET_STYLE_BLUE
         if style == KENNEY_WIDGET_STYLE_BLUE:
             alternate_style = KENNEY_WIDGET_STYLE_BROWN
-        self.alternate_background = KenneyWidget(alternate_style, width, height=height).background
+        if self.icon_image:
+            alternate_image = Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "iconCheck_" + alternate_style.color + ".png"
+            dimensions = (width, height)
+            self.alternate_background = ScaledImage.render(alternate_image, dimensions)
+        else:
+            self.alternate_background = KenneyWidget(alternate_style, width, height=height).background
 
         self.highlight = True
         self.redraw(force=True)
@@ -889,7 +963,7 @@ class KenneyOptionButton(KenneyWidget, KenneyWidgetLabel):
         # Partly copied from Label.redraw()
         if force:
             # Copy, don't blit, taking care for transparency
-            if self.is_clicked:
+            if self.is_selected:
                 self.image = self.alternate_background.copy()
             else:
                 self.image = self.background.copy()
@@ -899,21 +973,37 @@ class KenneyOptionButton(KenneyWidget, KenneyWidgetLabel):
             self.cached_text = self.text
         return
 
-    def update(self):
-        """
-        Change color if clicked, then call the base class method.
-        """
-        KenneyWidgetLabel.update(self)
-        return
-
     def clicked(self, button_name, event=None):
         """Plane standard method, called when there is a MOUSEDOWN event on this plane.
            Changes the Button color for some frames and calls the base class implementation.
         """
-        self.is_clicked = not self.is_clicked
+        self.is_selected = not self.is_selected
+        if self.group:
+            self.group.notify(self)
+
         if button_name == "left":
             self.redraw(force=True)
         return
+
+
+class ScaledImage:
+    IMAGE_DICT = {}
+
+    @staticmethod
+    def render(image_source_filename, target_dimension=None):
+        """
+        load and possibly resize (if target dimension is given) an image
+        :param image_source_filename: the complete path and filename (including folder) for the source image
+        :param target_dimension: a tuple (width, height) for the target image
+        :return: a copy of the surface with the correct background
+        """
+        if image_source_filename not in ScaledImage.IMAGE_DICT.keys():
+            ScaledImage.IMAGE_DICT[image_source_filename] = pygame.image.load(image_source_filename).convert_alpha()
+
+        image_source = ScaledImage.IMAGE_DICT[image_source_filename].copy()
+        if target_dimension:
+            return pygame.transform.smoothscale(image_source, target_dimension)
+        return image_source
 
 
 class ScaledSurface:
@@ -1070,7 +1160,7 @@ class IncludedSurface:
             surface.blit(new_surface, (current_top_pos[0], current_top_pos[1]))
         return surface
 
-import GameData
+
 
 class ImagePlane(Plane):
 
@@ -1131,7 +1221,7 @@ class ImagePlane(Plane):
 
     def render(self, displayrect = None):
         if self.camera_rect:
-            self.rendersurface.blit(self.image, (0,0), area=self.camera_rect)
+            self.rendersurface.blit(self.image, (0, 0), area=self.camera_rect)
         self.last_image_id = id(self.image)
 
         for subplane in (self.subplanes[name] for name in self.subplanes_list):
@@ -1147,3 +1237,19 @@ class ImagePlane(Plane):
         pos_y = pos_y // Constants.TILE_SIZE[1] + camera_top_y
         #print("click at {}x{}! ".format(pos_x, pos_y))
         print(GameData.current_town.tile_map.map[(pos_x, pos_y)])
+
+
+# Some container styles
+KENNEY_CONTAINER_STYLE_INCLUDED = KenneyContainerStyle(color=Constants.KENNEY_COLOR_GREY,
+                                                       background_color=Constants.KENNEY_COLOR_BEIGE,
+                                                       single_last_widget_group=True)
+
+KENNEY_CONTAINER_STYLE_SCALED = KenneyContainerStyle(color=Constants.KENNEY_COLOR_GREY)
+
+# Some widget styles
+KENNEY_WIDGET_STYLE_BLUE = KenneyWidgetStyle(color=Constants.KENNEY_COLOR_BLUE, font="dolphin")
+KENNEY_WIDGET_STYLE_BROWN = KenneyWidgetStyle(color=Constants.KENNEY_COLOR_BROWN, font="dolphin")
+
+# Default
+Constants.DEFAULT_WIDGET_STYLE = KENNEY_WIDGET_STYLE_BLUE
+Constants.DEFAULT_CONTAINER_STYLE = KENNEY_CONTAINER_STYLE_INCLUDED

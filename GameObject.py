@@ -181,7 +181,7 @@ class Door(GameObject):
     ORIENTATION_HORIZONTAL = "horizontal"
     ORIENTATION_VERTICAL = "vertical"
 
-    def __init__(self, town, orientation, position_on_tile, closed=False, locked=None, style=Constants.DEFAUlT_STYLE):
+    def __init__(self, town, orientation, position_on_tile, closed=False, locked=None, style=Constants.DEFAULT_RESOURCE_STYLE):
 
         super().__init__("Door",
                          GameObject.DECORATION,
