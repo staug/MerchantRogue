@@ -10,6 +10,7 @@ import Constants
 import GameData
 
 
+
 # Time related management...
 # http://www.roguebasin.com/index.php?title=A_simple_turn_scheduling_system_--_Python_implementation
 
@@ -34,7 +35,7 @@ class Ticker(object):
 
     def next_turn(self):
         self.ticks += 1
-        print("Tick {} - Future Actions: {}".format(self.ticks, self.schedule))
+        # print("Tick {} - Future Actions: {}".format(self.ticks, self.schedule))
         actions = self.schedule.pop(self.ticks, [])
         for object_id in actions:
             if GameData.object_exist(object_id):

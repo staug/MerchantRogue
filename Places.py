@@ -107,6 +107,20 @@ class Town(object):
                 self.tile_map.map[a_thing.displayable_object.position_on_tile].register_thing(a_thing)
         return
 
+    def unregister_thing(self, a_thing):
+        """
+        Add an object (NPC, GameObject...) in the current town list. Only the id of the object is added...
+        :param a_thing: the object to add (NPC, GameObject)
+        :return: Nothing
+        """
+        if a_thing.id in self.things_id_list:
+            self.things_id_list.remove(a_thing.id)
+        a_thing.town = None
+        if hasattr(a_thing, "displayable_object"):
+            if a_thing.displayable_object and a_thing.displayable_object.position_on_tile:
+                self.tile_map.map[a_thing.displayable_object.position_on_tile].unregister_thing(a_thing)
+        return
+
 
 class Path(object):
     """ A Path links two towns. Note that due to Geography, path from A to B may be different from B to A...
@@ -237,6 +251,19 @@ class Tile(object):
     @property
     def has_things(self):
         return len(self.name_of_things_on_tile) > 0
+
+    def get_object_id(self, object_type=None):
+        """
+        Fetch the first object id that is located here that matches the type
+        :return: the object id if there is something, None otherwise
+        """
+        for an_id in self.name_of_things_on_tile:
+            if object_type and isinstance(GameData.game_dict[an_id], object_type):
+                return an_id
+            elif not object_type:
+                return an_id
+        return None
+
 
     def __str__(self):
         part1 = "{}x{} Floor characteristices: {} [blocking: {}] {}".format(

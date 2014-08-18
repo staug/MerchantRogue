@@ -7,6 +7,7 @@ import Constants
 import Util
 import GameData
 from Displayable import DisplayableObject
+import GameObject
 
 
 class Fighter(object):
@@ -66,7 +67,7 @@ class Player(Fighter):
     def __init__(self, town, position_on_tile=(0, 0), graphical_representation=None):
 
         self.id = "Player" + str(id(self))
-        super().__init__(town=town, movable=True)
+        super().__init__(town=town)
 
         self.displayable_object = DisplayableObject(movable=True, position_on_tile=position_on_tile,
                                                     graphical_representation=graphical_representation)
@@ -135,17 +136,13 @@ class Player(Fighter):
         self.mercenaries.remove(mercenary)
 
     def pickup(self):
-        game_object = None
-        for an_object in self.town.game_object_list:
-            if an_object.displayable_object and an_object.displayable_object.position_on_tile == self.position_on_tile:
-                game_object = an_object
-                break
-        if not game_object:
+        game_object_id = GameData.current_town.tile_map.map[self.position_on_tile].get_object_id(GameObject.GameObject)
+        if not game_object_id:
             Util.Event("There is nothing there!")
             return
         try:
-            self.store((game_object, 1))
-            self.town.game_object_list.remove(game_object)
+            self.store((GameData.game_dict[game_object_id], 1))
+            GameData.current_town.unregister_thing(GameData.game_dict[game_object_id])
         except InventoryObject.InventoryFull as e:
             Util.Event(e.message)
 
@@ -155,7 +152,7 @@ class NonPlayableCharacter(Fighter):
                  graphical_representation=None,
                  default_action_list=None, action_when_player=None, action_when_other_npc=None):
 
-        super().__init__(town=town, movable=True)
+        super().__init__(town=town)
 
         self.id = "NPC" + str(id(self))
         if not name:
@@ -253,10 +250,8 @@ class TraderNPC(NonPlayableCharacter):
             message += "\n Gold available: {}".format(building.gold)
         Util.Event(message)
 
-    def __init__(self, town, position_on_tile=(0, 0), speed=None,
-                 graphical_representation = None, surface_to_draw=None, surface_memory=None):
+    def __init__(self, town, position_on_tile=(0, 0), speed=None, graphical_representation=None):
         super().__init__(town, position_on_tile=position_on_tile, graphical_representation=graphical_representation,
-                         surface_to_draw=surface_to_draw, surface_memory=surface_memory,
                          default_action_list=[self.stay_in_room], action_when_player=[self.trade_with_player],
                          speed=speed)
         self.friendliness_setting = random.randint(-10, 10)
