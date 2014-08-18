@@ -7,7 +7,50 @@ import time
 import pygame
 
 import Constants
+import GameData
 
+
+# Time related management...
+# http://www.roguebasin.com/index.php?title=A_simple_turn_scheduling_system_--_Python_implementation
+
+
+class Ticker(object):
+    """Adapted time for Roguelike game"""
+
+    def __init__(self):
+        self.ticks = 0  # current ticks--sys.maxint is 2147483647
+        self.schedule = {}  # this is the dict of things to do {ticks: [obj1, obj2, ...], ticks+1: [...], ...}
+        return
+
+    def schedule_turn(self, interval, obj):
+        """
+        Schedule the next turn for this object in {interval} time
+        """
+        if isinstance(obj, str):
+            self.schedule.setdefault(self.ticks + interval, []).append(obj)
+        else:
+            self.schedule.setdefault(self.ticks + interval, []).append(obj.id)
+        return
+
+    def next_turn(self):
+        self.ticks += 1
+        print("Tick {} - Future Actions: {}".format(self.ticks, self.schedule))
+        actions = self.schedule.pop(self.ticks, [])
+        for object_id in actions:
+            if GameData.object_exist(object_id):
+                GameData.game_dict[object_id].take_action()
+        return
+
+
+    def cancel_future_actions(self, obj):
+        """
+        Used to remove the future actions of the obj - for example in kind of death
+        """
+        if not isinstance(obj, str):
+            obj = obj.id
+        for actions in self.schedule:
+            actions[:] = [anobj for anobj in actions if anobj != obj]
+        return
 
 # http://www.roguebasin.com/index.php?title=Markov_chains_name_generator_in_Python
 

@@ -11,6 +11,7 @@ import random
 import Util
 import pygame
 import Constants
+import GameData
 
 
 class Building(object):
@@ -29,6 +30,7 @@ class Building(object):
         self.decoration_list = {}
         self.town = town
         self.name = Building.UNKNOWN
+        return
 
     def action_pane(self):
         pass
@@ -51,6 +53,7 @@ class TradingPost(Building):
                     ("Decor", True, (0, 112)), ("Decor", True, (16, 112), (16, 128)), ("Decor", True, (32, 112))],
             "1x3": [("Decor", True, (0, 160))]
         }
+        return
 
     def action_pane(self):
         pass
@@ -63,10 +66,8 @@ class Town(object):
 
     def __init__(self, building_number, make_map=False, render_map=False):
         self.name = Util.MName().new()
-        self.npc_list = []
-        self.game_object_list = []
+        self.things_id_list = []
         self.available_paths = []
-        #self.buildings = {"Gate":Gate(self), "Title":Title(self), "Trading Post":TradingPost(self)}
         self.buildings = [TradingPost(self), TradingPost(self)]
         size = (50, 50)
         if 4 < building_number <= 6:
@@ -74,12 +75,14 @@ class Town(object):
         elif 6 < building_number:
             size = (80, 80)
         self.tile_map = TownTileMap(self, size, make_map=make_map, render_map=render_map)
+        return
 
     def __str__(self):
         return self.name
 
     def add_path(self, path):
         self.available_paths.append(path)
+        return
 
     def build_tile_map(self):
         size = (50, 50)
@@ -88,13 +91,22 @@ class Town(object):
         elif 6 < len(self.buildings):
             size = (80, 80)
         self.tile_map = TownTileMap(self, size, make_map=True, render_map=True)
+        return
 
-    def register_object(self, a_game_object):
-        self.game_object_list.append(a_game_object)
-        if a_game_object.displayable_object and a_game_object.displayable_object.position_on_tile:
-            print(
-                "Adding object " + a_game_object.name + " at " + str(a_game_object.displayable_object.position_on_tile))
-            self.tile_map.map[a_game_object.displayable_object.position_on_tile].register_object(a_game_object)
+    def register_thing(self, a_thing):
+        """
+        Add an object (NPC, GameObject...) in the current town list. Only the id of the object is added...
+        :param a_thing: the object to add (NPC, GameObject)
+        :return: Nothing
+        """
+        if not a_thing.id in self.things_id_list:
+            self.things_id_list.append(a_thing.id)
+        a_thing.town = self
+        if hasattr(a_thing, "displayable_object"):
+            if a_thing.displayable_object and a_thing.displayable_object.position_on_tile:
+                self.tile_map.map[a_thing.displayable_object.position_on_tile].register_thing(a_thing)
+        return
+
 
 class Path(object):
     """ A Path links two towns. Note that due to Geography, path from A to B may be different from B to A...
@@ -194,37 +206,52 @@ class Tile(object):
 
     def __init__(self, position, floor_type, tile_map_owner, decoration_type=None):
         self.floor_type = floor_type
-        self.decoration_type = decoration_type
         self.room = None
-        #self.characteristics = {}
         self.position = position
         self.tile_map_owner = tile_map_owner
-        self.object_on_tile = []
-        self.decoration_blocking = False
+        self.name_of_things_on_tile = []
+        return
 
-    def register_object(self, an_object):
-        self.object_on_tile.append(an_object)
+    def register_thing(self, a_thing):
+        if isinstance(a_thing, str):
+            self.name_of_things_on_tile.append(a_thing)
+        else:
+            self.name_of_things_on_tile.append(a_thing.id)
+        return
 
-    def unregister_object(self, an_object):
-        self.object_on_tile.remove(an_object)
+    def unregister_thing(self, a_thing):
+        if isinstance(a_thing, str):
+            if a_thing in self.name_of_things_on_tile:
+                self.name_of_things_on_tile.remove(a_thing)
+        elif a_thing.id in self.name_of_things_on_tile:
+            self.name_of_things_on_tile.remove(a_thing.id)
+        return
 
     @property
     def blocking(self):
-        for game_object in self.object_on_tile:
-            if game_object.blocking:
+        for game_id in self.name_of_things_on_tile:
+            if hasattr(GameData.game_dict[game_id], "blocking") and GameData.game_dict[game_id].blocking:
                 return True
-        return self.floor_type in (Tile.WATER, Tile.WALL, Tile.ROCK) or self.decoration_blocking
+        return self.floor_type in (Tile.WATER, Tile.WALL, Tile.ROCK)
+
+    @property
+    def has_things(self):
+        return len(self.name_of_things_on_tile) > 0
 
     def __str__(self):
         part1 = "{}x{} Floor characteristices: {} [blocking: {}] {}".format(
-            self.position[0], self.position[1], self.floor_type, self.blocking, self.decoration_type
+            self.position[0], self.position[1], self.floor_type
         )
         part2 = ""
-        if self.object_on_tile:
+        if self.name_of_things_on_tile:
             part2 = "\n\t Currently at this location: "
-            for an_object in self.object_on_tile:
-                part2 += "\n\t\t{}".format(an_object)
+            for an_id in self.name_of_things_on_tile:
+                if hasattr(GameData.game_dict[an_id], "name"):
+                    part2 += "\n\t\t{}".format(GameData.game_dict[an_id].name)
+                else:
+                    part2 += "\n\t\t{}".format(an_id)
         return part1+part2
+
 
 class TileMap(object):
 
@@ -349,7 +376,8 @@ class TownTileMap(TileMap):
 
         class Room(object):
 
-            def __init__(self, width, height, top_x, top_y, building):
+            def __init__(self, town, width, height, top_x, top_y, building):
+                self.town = town
                 self.places = []
                 self.doors = []
                 self.building = building
@@ -430,22 +458,42 @@ class TownTileMap(TileMap):
                         nb_placed += 1
 
             def add_deco(self, tile_map, max_x, max_y):
-                list_doors=[door_def[0] for door_def in self.doors]
+                """
+                Add the decorative object. Note that the decoration is a GameObject!
+                :param tile_map:
+                :param max_x:
+                :param max_y:
+                :return: nothing
+                """
+                list_doors = [door_def[0] for door_def in self.doors]
                 for i in range(20):
                     place = random.choice(self.places)
-                    weight = self.compute_tile_weight(place[0], place[1], (Tile.FLOOR), tile_map, max_x, max_y)
+                    weight = self.compute_tile_weight(place[0], place[1], [Tile.FLOOR], tile_map, max_x, max_y)
                     near_door = (place[0], place[1] - 1) in list_doors or \
                                 (place[0], place[1] + 1) in list_doors or \
                                 (place[0] - 1, place[1]) in list_doors or \
                                 (place[0] + 1, place[1]) in list_doors
-                    if not near_door and tile_map[place].floor_type == Tile.FLOOR and not tile_map[place].decoration_type and weight == 15:
-                        tile_map[place].decoration_type = random.choice(self.building.decoration_list["1x1"])
-                        if tile_map[place].decoration_type[1]:
-                            tile_map[place].decoration_blocking = True
+                    if not (near_door or not (tile_map[place].floor_type == Tile.FLOOR) or tile_map[
+                        place].has_things) and weight == 15:
+                        a_deco = random.choice(self.building.decoration_list["1x1"])
+                        decoration = GameObject(a_deco[0], GameObject.DECORATION,
+                                                town=self.town,
+                                                weight=random.randint(1, 10),
+                                                volume=random.randint(1, 5),
+                                                regular_value=random.randint(2, 10),
+                                                displayable_object=DisplayableObject(movable=False, blocking=a_deco[1],
+                                                                                     position_on_tile=place,
+                                                                                     graphical_representation=
+                                                                                     AnimatedSpriteObject(
+                                                                                         Constants.DAWNLIKE_STYLE,
+                                                                                         "Objects", "Decor",
+                                                                                         a_deco[2])))
+                        GameData.register_object(decoration)
 
         need_rebuild = True
 
         while need_rebuild:
+            self.rooms = []
 
             # Main process - Ground
             print("Generating ground")
@@ -461,7 +509,8 @@ class TownTileMap(TileMap):
             trials = 0
             print("Placing rooms")
             while len(room_placed) < len(self.town.buildings) and trials < 100:
-                a_room = Room(10 + random.randint(-3, 1),
+                a_room = Room(self.town,
+                              10 + random.randint(-3, 1),
                               10 + random.randint(-3, 1),
                               random.randint(self.max_x // 5, self.max_x - self.max_x // 5),
                               random.randint(self.max_y // 5, self.max_y - self.max_y // 5),
@@ -669,16 +718,6 @@ class TownTileMap(TileMap):
                             self.surface_memory.blit(floor_image[self.compute_tile_weight(x, y, Tile.FLOOR)],
                                                      destination_pos)
 
-                        # Now add the decoration...
-                        if self.map[(x, y)].decoration_type:
-                                DisplayableObject(self.town, movable=False, position_on_tile=(x, y),
-                                                  graphical_representation=AnimatedSpriteObject(style, "Objects",
-                                                                                                self.map[(
-                                                                                                    x,
-                                                                                                    y)].decoration_type[
-                                                                                                    0], self.map[(
-                                                          x, y)].decoration_type[2]),
-                                                         surface_to_draw=self.surface_memory, surface_memory=self.surface_memory).draw()
             else:
                 source_file_o = pygame.image.load(Constants.ORYX_IMAGE_RESOURCE_FOLDER + 'oryx_16bit_fantasy_world_trans.png').convert_alpha()
                 water_image = rock_image = dirt_image = path_image = floor_image = grass_image = build_floor_tile_oryx(source_file_o, 696, 384, Constants.TILE_SIZE)

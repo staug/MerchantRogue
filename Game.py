@@ -31,6 +31,9 @@ class Game():
 
     @classmethod
     def start_new_game(cls, number_town):
+        Util.DebugEvent("Initializing Time")
+        GameData.time_ticker = Util.Ticker()
+
         Util.DebugEvent("Building new world")
         GameData.town_graph = Places.TownGraph([Places.Town(random.randint(2,7)) for x in range(number_town)])
 
@@ -54,12 +57,13 @@ class Game():
                 #                        position_on_tile=town.tile_map.get_place_in_building(Places.Building.TRADING_POST),
                 #                        graphical_representation=Player.AnimatedSpriteObject(True, "Characters", "Player", coordinates))
                 npc = Player.NonPlayableCharacter(town,
+                                                  speed=(1, 5),
                                        position_on_tile=(i * 1, i * 2),
                                        graphical_representation=AnimatedSpriteObject(Constants.DAWNLIKE_STYLE,
                                                                                      "Characters", "Player",
                                                                                      coordinates))
 
-                town.npc_list.append(npc)
+                GameData.register_object(npc)
 
             for i in range(25):
                 """
@@ -76,26 +80,26 @@ class Game():
                  displayable_object=None):
                 """
 
-                an_object = GameObject("A leftover object",
+                an_object = GameObject("A leftover object " + str(i),
                                        GameObject.JUNK,
+                                       town=town,
                                        weight=random.randint(1, 10),
                                        volume=random.randint(1, 5),
                                        regular_value=random.randint(2, 10),
-                                       displayable_object=DisplayableObject(town=town,
-                                                                            movable=False,
-                                                                            blocking=False,
+                                       displayable_object=DisplayableObject(movable=False, blocking=False,
                                                                             position_on_tile=(
-                                                                            random.randint(0, town.tile_map.max_x - 1),
-                                                                            random.randint(0, town.tile_map.max_y - 1)),
+                                                                                random.randint(0,
+                                                                                               town.tile_map.max_x - 1),
+                                                                                random.randint(0,
+                                                                                               town.tile_map.max_y - 1)),
                                                                             graphical_representation=AnimatedSpriteObject(
                                                                                 Constants.DAWNLIKE_STYLE, "Objects",
-                                                                                "Ground", (16, 48)),
-                                                                            delayed_register=True))
-                town.register_object(an_object)
+                                                                                "Ground", (16, 48))))
+                GameData.register_object(an_object)
                 # a door is an open object
             for room in town.tile_map.rooms:
                 for door in room.doors:
-                    town.register_object(Door(town, door[1], door[0], closed=True, locked=False))
+                    GameData.register_object(Door(town, door[1], door[0], closed=True, locked=False))
 
         Util.DebugEvent("Setting up objects in the other places (To be done later)...")
 
@@ -105,13 +109,22 @@ class Game():
 
     @classmethod
     def assign_surface_to_displayable_objects(cls, town, surface_to_draw, surface_memory):
-        GameData.player.graphical_representation.set_surface(surface_to_draw, surface_memory)
+        GameData.player.displayable_object.graphical_representation.set_surface(surface_to_draw, surface_memory)
         for a_town in GameData.town_graph.towns:
             if a_town.name == town.name:
-                for npc in a_town.npc_list:
-                    npc.graphical_representation.set_surface(surface_to_draw, surface_memory)
-                for an_object in a_town.game_object_list:
-                    an_object.displayable_object.graphical_representation.set_surface(surface_to_draw, surface_memory)
+                for an_id in a_town.things_id_list:
+                    GameData.game_dict[an_id].displayable_object.graphical_representation.set_surface(surface_to_draw,
+                                                                                                      surface_memory)
+
+
+    @classmethod
+    def kick_off_timer_in_place(cls, town):
+        for a_town in GameData.town_graph.towns:
+            if a_town.name == town.name:
+                for an_id in a_town.things_id_list:
+                    if hasattr(GameData.game_dict[an_id], "speed"):
+                        GameData.time_ticker.schedule_turn(GameData.game_dict[an_id].speed, GameData.game_dict[an_id])
+
 
     @classmethod
     def save_game(cls, file_name):
@@ -164,9 +177,12 @@ if __name__ == '__main__':
                                                        GameData.current_town.tile_map.surface_memory)
 
     # END INITIALIZATION
-    print("All objects init done - starting main loop")
+    print("All objects init done - starting time and main loop")
+    Game.kick_off_timer_in_place(GameData.current_town)
 
-    #pygame.mouse.set_cursor(*pygame.cursors.diamond)
+    # pygame.mouse.set_cursor((16, 16), (0,0), *pygame.cursors.compile(Constants.SWORD_MASK, black="0", white=".", xor="o"))
+    pygame.mouse.set_cursor(*pygame.cursors.load_xbm(Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "cursor2.xbm",
+                                                     Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "cursor2-mask.xbm"))
 
     #screen.sub(GuiElements.KenneyPopupLabelCancel("This is a very very long message.\nI test wrapper.\nAgain a very very long sentecne that never ends\nShort.", style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
     #screen.sub(GuiElements.KenneyGetStringDialog("Enter your very big name", test, style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
@@ -223,16 +239,13 @@ if __name__ == '__main__':
                     main_image.move_camera(x=1)
 
         if player_took_action:
-            for npc in GameData.current_town.npc_list:
-                npc.take_action()
+            GameData.time_ticker.next_turn()
 
-        for npc in GameData.current_town.npc_list:
-            npc.draw()
+        for thing in GameData.current_town.things_id_list:
+            GameData.game_dict[thing].displayable_object.draw()
 
-        for game_object in GameData.current_town.game_object_list:
-            game_object.draw()
+        GameData.player.displayable_object.draw()
 
-        GameData.player.draw()
 
         # test_anim.blit(main_image.image, (pos_x, pos_y))
 

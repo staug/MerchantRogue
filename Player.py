@@ -2,21 +2,76 @@ __author__ = 'Tangil'
 
 import random
 import math
+
 import Constants
 import Util
 import GameData
 from Displayable import DisplayableObject
 
 
-class Player(DisplayableObject):
+class Fighter(object):
+    def __init__(self, town=None):
+        self.town = town
+        self.movable = True
+        self.displayable_object = None
 
-    def __init__(self, town, position_on_tile=(0, 0), graphical_representation = None,
-                 surface_to_draw=None, surface_memory=None):
-        super().__init__(town, movable=True, position_on_tile=position_on_tile,
-                         graphical_representation=graphical_representation,
-                         surface_to_draw=surface_to_draw, surface_memory=surface_memory)
+    @property
+    def position_on_tile(self):
+        """
+        The position on tile s hosted only by the displayable object part, this is just a convenience method
+        :return:
+        """
+        return self.displayable_object.position_on_tile
 
+    def move_to(self, new_tile_position, ignore_tile_blocking=False, ignore_movable=False, ignore_message=False):
+        if new_tile_position not in self.town.tile_map.map.keys():
+            if not ignore_message:
+                Util.Event("{} not in tilemap".format(new_tile_position))
+            return False
+        if not ignore_movable and not self.movable:
+            if not ignore_message:
+                Util.Event("Tried to move a non movable Fighter".format(self))
+            return False
+        if not ignore_tile_blocking and self.town.tile_map.map[new_tile_position].blocking:
+            if not ignore_message:
+                Util.Event("Illegal move to {}".format(new_tile_position))
+            return False
+        # Test to know if any objects with callbacks are in the new position
+        for thing_id in self.town.tile_map.map[new_tile_position].name_of_things_on_tile:
+            action_result = GameData.game_dict[thing_id].call_action(trigger=self)
+            if action_result and Constants.PREVENT_MOVEMENT in action_result:
+                if not ignore_message:
+                    Util.Event("{} at {} prevented the move".format(GameData.game_dict[thing_id].name,
+                                                                    new_tile_position))
+                return False
+
+        self.displayable_object.graphical_representation.graphical_move(self.displayable_object.position_on_tile,
+                                                                        new_tile_position)
+        self.town.tile_map.map[self.displayable_object.position_on_tile].unregister_thing(self)
+        self.displayable_object.position_on_tile = new_tile_position
+        self.town.tile_map.map[self.displayable_object.position_on_tile].register_thing(self)
+        return True
+
+    def move(self, x_tile_offset, y_tile_offset, ignore_tile_blocking=False,
+             ignore_movable=False, ignore_message=False):
+        new_tile_position = (
+            self.position_on_tile[0] + x_tile_offset,
+            self.position_on_tile[1] + y_tile_offset
+        )
+        return self.move_to(new_tile_position, ignore_tile_blocking=ignore_tile_blocking,
+                            ignore_movable=ignore_movable, ignore_message=ignore_message)
+
+
+class Player(Fighter):
+    def __init__(self, town, position_on_tile=(0, 0), graphical_representation=None):
+
+        self.id = "Player" + str(id(self))
+        super().__init__(town=town, movable=True)
+
+        self.displayable_object = DisplayableObject(movable=True, position_on_tile=position_on_tile,
+                                                    graphical_representation=graphical_representation)
         self.wealth = 0
+        self.name = "Player"
 
         # TEST
         body = InventoryObject("Own body", slots=5)
@@ -95,14 +150,21 @@ class Player(DisplayableObject):
             Util.Event(e.message)
 
 
-class NonPlayableCharacter(DisplayableObject):
-
-    def __init__(self, town, name=None, position_on_tile=(0, 0),
-                 graphical_representation = None, surface_to_draw=None, surface_memory=None,
+class NonPlayableCharacter(Fighter):
+    def __init__(self, town, name=None, speed=1, position_on_tile=(0, 0),
+                 graphical_representation=None,
                  default_action_list=None, action_when_player=None, action_when_other_npc=None):
-        super().__init__(town, movable=True, position_on_tile=position_on_tile,
-                         graphical_representation=graphical_representation,
-                         surface_to_draw=surface_to_draw, surface_memory=surface_memory)
+
+        super().__init__(town=town, movable=True)
+
+        self.id = "NPC" + str(id(self))
+        if not name:
+            name = "NPC" + str(id(self))
+        self.name = name
+
+        self.displayable_object = DisplayableObject(movable=True, position_on_tile=position_on_tile,
+                                                    graphical_representation=graphical_representation)
+
         if not default_action_list:
             self.default_action_list = [self.get_close_to_player]
         else:
@@ -117,9 +179,10 @@ class NonPlayableCharacter(DisplayableObject):
             self.action_when_player = action_when_other_npc
         self.blocking = True
 
-        if not name:
-            name = "NPC"+str(id(self))
-        self.name=name
+        if isinstance(speed, tuple):
+            self.speed = random.randint(speed[0], speed[1])
+        else:
+            self.speed = speed
 
     def call_action(self, **kwargs):
         trigger = kwargs.pop("trigger")
@@ -142,6 +205,8 @@ class NonPlayableCharacter(DisplayableObject):
             random.choice(self.default_action_list)(source=self)
         else:
             self.wander(source=self)
+        # start by scheduling next action
+        GameData.time_ticker.schedule_turn(self.speed, self)
 
     def speak_garbage(self, **kwargs):
         Util.Event("Hello player!")
@@ -151,6 +216,7 @@ class NonPlayableCharacter(DisplayableObject):
 
     def wander(self, **kwargs):
         self.move(random.randint(-1, 1), random.randint(-1, 1), ignore_message=True)
+        return
 
     def do_nothing(self, **kwargs):
         print("{} was told to do nothing".format(self.name))
@@ -177,7 +243,7 @@ class NonPlayableCharacter(DisplayableObject):
 
 
 class TraderNPC(NonPlayableCharacter):
-
+    # TODO: review completely thanks to new deefinitions of Gameobject?
     def trade_with_player(self):
         building = self.town.tile_map.map[self.position_on_tile].room
         message = ""
@@ -187,11 +253,12 @@ class TraderNPC(NonPlayableCharacter):
             message += "\n Gold available: {}".format(building.gold)
         Util.Event(message)
 
-    def __init__(self, town, position_on_tile=(0, 0),
+    def __init__(self, town, position_on_tile=(0, 0), speed=None,
                  graphical_representation = None, surface_to_draw=None, surface_memory=None):
         super().__init__(town, position_on_tile=position_on_tile, graphical_representation=graphical_representation,
                          surface_to_draw=surface_to_draw, surface_memory=surface_memory,
-                         default_action_list=[self.stay_in_room], action_when_player=[self.trade_with_player])
+                         default_action_list=[self.stay_in_room], action_when_player=[self.trade_with_player],
+                         speed=speed)
         self.friendliness_setting = random.randint(-10, 10)
 
 class InventoryObject(object):

@@ -16,7 +16,7 @@ TILE_SIZE = (16, 16)
 DISPLAY_EVENT = USEREVENT + 1
 DEBUG_EVENT = USEREVENT + 2
 
-#STYLE INFORMATION
+# STYLE INFORMATION
 DAWNLIKE_IMAGE_RESOURCE_FOLDER = str(os.curdir + os.sep + "resources" + os.sep + "img" + os.sep + "Dawnlike" + os.sep)
 DAWNLIKE_STYLE = "DAWNLIKE"
 DAWNLIKE_TILE_SIZE = (16, 16)
@@ -40,7 +40,6 @@ DEFAULT_WIDGET_STYLE = None  # Will be set later
 DEFAULT_CONTAINER_STYLE = None  # Will be set later
 
 FONT_FOLDER = str(os.curdir + os.sep + "resources" + os.sep + "font" + os.sep)
-
 
 # CALL ACTION RESULT
 # This is a set of possible result of the call action method (on objects or npc)

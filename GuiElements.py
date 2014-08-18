@@ -8,6 +8,7 @@ import planes.gui
 import pygame
 import GameData
 
+
 class TradePlane(planes.gui.Container):
     """
     A BuyPlane wraps an OptionList, a list of PlusMinus and an OK button,
@@ -28,7 +29,7 @@ class TradePlane(planes.gui.Container):
                The selected Option
         """
 
-        def __init__(self, number, lineheight, good_quantity = None):
+        def __init__(self, number, lineheight, good_quantity=None):
             """Initialise the OptionList.
                option_list is a list of strings to be displayed as options.
             """
@@ -50,7 +51,8 @@ class TradePlane(planes.gui.Container):
             return
 
 
-    def __init__(self, name, text, goods, callback, quantity=None, width = 300, lineheight = 16, background_color = None, price_modifier = None):
+    def __init__(self, name, text, goods, callback, quantity=None, width=300, lineheight=16, background_color=None,
+                 price_modifier=None):
         """Initialise the OptionSelector.
            option_list is a list of strings to be displayed as options.
            callback is a function to be called with the selected Option instance
@@ -60,9 +62,9 @@ class TradePlane(planes.gui.Container):
         # Call base class init
         #
         planes.gui.Container.__init__(self,
-                           name,
-                           padding = 5,
-                           background_color = background_color)
+                                      name,
+                                      padding=5,
+                                      background_color=background_color)
 
         # TODO: copied from Button.__init__. Maybe inherit from a third class 'Callback'?
         #
@@ -72,22 +74,22 @@ class TradePlane(planes.gui.Container):
         #
         goodlist = []
         for good in goods:
-            goodlist.append(good.name + " " + str(good.regular_value)+ " " + str(price_modifier[good.name]))
+            goodlist.append(good.name + " " + str(good.regular_value) + " " + str(price_modifier[good.name]))
         ol = planes.gui.OptionList("option_list",
-                        goodlist,
-                        width - 150,
-                        lineheight)
+                                   goodlist,
+                                   width - 150,
+                                   lineheight)
 
         self.sub(ol)
         o2 = TradePlane.PlusMinusList(len(goods), 30, good_quantity=quantity)
         self.sub(o2)
 
         button = planes.gui.Button(text,
-                        pygame.Rect((0, 0), (o2.rect.width + ol.rect.width, lineheight)),
-                        self.selection_made)
+                                   pygame.Rect((0, 0), (o2.rect.width + ol.rect.width, lineheight)),
+                                   self.selection_made)
 
         self.sub(button)
-        ol.rect.left=0
+        ol.rect.left = 0
         o2.rect.topleft = ol.rect.topright
         button.rect.top = o2.rect.bottom
         self.rect.height = button.rect.bottom
@@ -112,7 +114,6 @@ class TradePlane(planes.gui.Container):
 
 
 class KenneyContainerStyle:
-
     def __init__(self, margin_top=10, margin_left=10, margin_bottom=10, margin_right=10, color=None,
                  background_color=None, single_last_widget_group=False, padding_v=5, padding_h=5):
         """
@@ -143,8 +144,6 @@ class KenneyContainerStyle:
             self.background_color = background_color
             self.is_included = True
         self.single_last_widget = single_last_widget_group
-
-
 
 
 class KenneyContainer(planes.gui.Container):
@@ -180,7 +179,7 @@ class KenneyContainer(planes.gui.Container):
         """
         # Call base
         if not name:
-            name=str(id(self))
+            name = str(id(self))
         planes.gui.Container.__init__(self, name, style.padding_v)
         # save main arguments
         self.style = style
@@ -193,15 +192,15 @@ class KenneyContainer(planes.gui.Container):
         self.grab = False
         self.subplanes_alignment = {}  # tuple (h_align, v_align) to remember the alignment of each.
 
-        self.normalize_size = normalize_size # indicate if we should normalize all widget size to the biggest
+        self.normalize_size = normalize_size  # indicate if we should normalize all widget size to the biggest
         self.ignore_last_group_height = ignore_last_group_height
         self.rect.topleft = pos
         return
 
     def _resize(self):
-        margin_top = self.style.margin_top # this is the height of the top part
-        margin_bottom = self.style.margin_bottom # this is the height of the bottom part
-        margin_left = self.style.margin_left   # this is the height of the bottom part
+        margin_top = self.style.margin_top  # this is the height of the top part
+        margin_bottom = self.style.margin_bottom  # this is the height of the bottom part
+        margin_left = self.style.margin_left  # this is the height of the bottom part
         margin_right = self.style.margin_right  # this is the height of the bottom part
 
         group_horizontal = []
@@ -234,7 +233,6 @@ class KenneyContainer(planes.gui.Container):
                 max_normalized_widget_width = normalized_widget_width
             if current_line_width > max_line_width:
                 max_line_width = current_line_width
-
 
         ypos = margin_top
         max_right_pos = 0
@@ -307,12 +305,13 @@ class KenneyContainer(planes.gui.Container):
                     index -= 1
                     self.subplanes[self.subplanes_list[index]].rect.top += 17
 
-                self.background = IncludedSurface.render(self.rect.size, list_image, list_internal_margin=internal_margin)
+                self.background = IncludedSurface.render(self.rect.size, list_image,
+                                                         list_internal_margin=internal_margin)
             else:
                 self.background = IncludedSurface.render(self.rect.size, list_image)
         else:
             self.background = ScaledSurface.render(self.rect.size,
-                                               Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "panel_" + self.style.color + ".png")
+                                                   Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "panel_" + self.style.color + ".png")
 
     def sub(self,
             plane,
@@ -370,7 +369,6 @@ class KenneyContainer(planes.gui.Container):
         return
 
 
-
 class KenneyPopupLabel(KenneyContainer):
     """
     A popup that displays a message (wrapped) with a OK button.
@@ -416,6 +414,7 @@ class KenneyPopupLabel(KenneyContainer):
         self.destroy()
         return
 
+
 class KenneyPopupLabelCancel(KenneyContainer):
     """
     A popup that displays a message (wrapped) with a OK and cancel button.
@@ -460,6 +459,7 @@ class KenneyPopupLabelCancel(KenneyContainer):
             self.callback_ok(source=self, event=event)
         self.destroy()
         return
+
     def cancel(self, plane, event=None):
         if self.callback_cancel:
             self.callback_cancel(source=self, event=event)
@@ -472,10 +472,12 @@ class KenneyPopupOption(KenneyContainer):
     Display a list of choice that are selectable
     It is destroyed when OK or Cancel is clicked, and the callback is called with the selected object(s).
     """
+
     class ButtonGroup():
         """
         The button group governs group of selection, like a RadioGroup would do.
         """
+
         def __init__(self, multi_allowed=False):
             self.object_of_group = []
             self.button_of_group = []
@@ -504,8 +506,8 @@ class KenneyPopupOption(KenneyContainer):
             """
             objects = []
             for index, button in enumerate(self.button_of_group):
-                    if button.is_selected:
-                        objects.append(self.object_of_group[index])
+                if button.is_selected:
+                    objects.append(self.object_of_group[index])
             return objects
 
 
@@ -585,6 +587,7 @@ class KenneyPopupOption(KenneyContainer):
         self.destroy()
         return
 
+
 class KenneyGetStringDialog(KenneyContainer):
     """A combination of KenneyContainer, Label, TextBox and Button that asks the user for a string.
     """
@@ -638,8 +641,8 @@ class KenneyGetStringDialog(KenneyContainer):
         callback(text=text)
         return
 
-class KenneyWidgetStyle:
 
+class KenneyWidgetStyle:
     V_ALIGN_MIDDLE = "middle"
     V_ALIGN_TOP = "top"
     V_ALIGN_BOTTOM = "bottom"
@@ -660,7 +663,8 @@ class KenneyWidgetStyle:
                  font=None,
                  default_height=30,
                  default_width=100,
-                 ):
+                 font_size=14
+    ):
         """
         Basic style for all widgets
         :param color: the color of the foreground. Must be present if background image is not there
@@ -691,7 +695,7 @@ class KenneyWidgetStyle:
         a_font = None
         if font:
             a_font = Constants.FONT_FOLDER + font + ".ttf"
-        self.font = pygame.font.Font(a_font, 12)
+        self.font = pygame.font.Font(a_font, font_size)
 
         return
 
@@ -706,7 +710,6 @@ class KenneyWidgetStyle:
         else:
             dimensions = (self.default_width, self.default_height)
             return dimensions
-
 
 
 class KenneyWidget:
@@ -730,8 +733,9 @@ class KenneyWidget:
             self.background = ScaledSurface.render(
                 (width, height), Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "panel_" + self.style.color + ".png")
         else:
-            self.background = pygame.Surface((width, height), flags = pygame.SRCALPHA).convert_alpha()
-            self.background.blit(pygame.transform.smoothscale(KenneyWidgetStyle[style.background_image_filename].copy, (width, height)))
+            self.background = pygame.Surface((width, height), flags=pygame.SRCALPHA).convert_alpha()
+            self.background.blit(
+                pygame.transform.smoothscale(KenneyWidgetStyle[style.background_image_filename].copy, (width, height)))
 
 
 class KenneyWidgetLabel(planes.Plane):
@@ -739,7 +743,8 @@ class KenneyWidgetLabel(planes.Plane):
     A specific label object, able to follow n object with/without an attribute
     """
 
-    def __init__(self, text=None, width=None, height=None, style=None, follow_object=None, follow_attribute=None, pos=(0, 0)):
+    def __init__(self, text=None, width=None, height=None, style=None, follow_object=None, follow_attribute=None,
+                 pos=(0, 0)):
         """Initialise the Label.
            text is the text to be written on the Label. If text is None, it is
            replaced by an empty string.
@@ -833,6 +838,7 @@ class KenneyWidgetButton(KenneyWidget, KenneyWidgetLabel):
     """
     A planes.gui.Button enhanced with Kenney, showing a scaled surface as background.
     """
+
     def __init__(self, callback, width=None, height=None, style=None, label=None, pos=(0, 0)):
         """Initialise the Button.
 
@@ -919,6 +925,7 @@ class KenneyWidgetButton(KenneyWidget, KenneyWidgetLabel):
         KenneyWidgetLabel.clicked(self, button_name, event=event)
         return
 
+
 class KenneyWidgetIconButton(KenneyWidget, KenneyWidgetLabel):
     """
     A planes.gui.Button enhanced diplaying a single image and no text.
@@ -967,7 +974,7 @@ class KenneyWidgetIconButton(KenneyWidget, KenneyWidgetLabel):
         # Change color if clicked, then call the base class method.
         # """
         # if self.clicked_counter:
-        #     self.clicked_counter = self.clicked_counter - 1
+        # self.clicked_counter = self.clicked_counter - 1
         #     if not self.clicked_counter:
         #         # Just turned zero, restore original background
         #         self.current_color = self.background_color
@@ -989,11 +996,13 @@ class KenneyWidgetIconButton(KenneyWidget, KenneyWidgetLabel):
         KenneyWidgetLabel.clicked(self, button_name, event=event)
         return
 
+
 class KenneyWidgetOptionButton(KenneyWidget, KenneyWidgetLabel):
     """
     A specific button to be used for a list of selection, which keeps in memory a state.
     Change color when selected when it is selected.
     """
+
     def __init__(self, group=None, use_image=False, width=None, height=None, style=None, pos=(0, 0), selected=False):
         """
         Initialize the button
@@ -1253,22 +1262,20 @@ class IncludedSurface:
         return surface
 
 
-
 class ImagePlane(Plane):
-
     def __init__(self,
                  name,
                  rect,
                  tile_size,
                  image_size=None,
-                 draggable = False,
-                 grab = False,
-                 highlight = False,
-                 left_click_callback = None,
-                 right_click_callback = None,
-                 up_click_callback = None,
-                 down_click_callback = None,
-                 dropped_upon_callback = None):
+                 draggable=False,
+                 grab=False,
+                 highlight=False,
+                 left_click_callback=None,
+                 right_click_callback=None,
+                 up_click_callback=None,
+                 down_click_callback=None,
+                 dropped_upon_callback=None):
 
         if not image_size:
             image_size = rect.size
@@ -1283,7 +1290,7 @@ class ImagePlane(Plane):
         self.image_size = image_size
         self.tile_size = tile_size
 
-    def set_camera(self, camera_size, camera_center=None, camera_top_left=(0,0)):
+    def set_camera(self, camera_size, camera_center=None, camera_top_left=(0, 0)):
         self.camera_rect = pygame.Rect(camera_top_left, camera_size)
         self.rendersurface = pygame.Surface(camera_size)
         if camera_center:
@@ -1291,14 +1298,14 @@ class ImagePlane(Plane):
 
     def move_camera_tile_center(self, new_center):
         self.camera_rect.center = (new_center[0] * self.tile_size[0], new_center[1] * self.tile_size[1])
-        self.move_camera() # To adjust to the borders...
+        self.move_camera()  # To adjust to the borders...
 
     def move_camera(self, x=0, y=0):
         move_x = x * self.tile_size[0]
         move_y = y * self.tile_size[1]
 
         # print("Width: {} Height: {} Camera: Top {}/ Left {} Bottom {} Right {}".format(
-        #     self.image_size[0], self.image_size[1],
+        # self.image_size[0], self.image_size[1],
         #     self.camera_rect.top, self.camera_rect.left, self.camera_rect.bottom, self.camera_rect.right))
 
         self.camera_rect.move_ip(move_x, move_y)
@@ -1311,7 +1318,7 @@ class ImagePlane(Plane):
         if self.camera_rect.bottom >= self.image_size[1]:
             self.camera_rect.bottom = self.image_size[1]
 
-    def render(self, displayrect = None):
+    def render(self, displayrect=None):
         if self.camera_rect:
             self.rendersurface.blit(self.image, (0, 0), area=self.camera_rect)
         self.last_image_id = id(self.image)
@@ -1327,7 +1334,7 @@ class ImagePlane(Plane):
         (pos_x, pos_y) = event.pos
         pos_x = pos_x // Constants.TILE_SIZE[0] + camera_top_x
         pos_y = pos_y // Constants.TILE_SIZE[1] + camera_top_y
-        #print("click at {}x{}! ".format(pos_x, pos_y))
+        # print("click at {}x{}! ".format(pos_x, pos_y))
         print(GameData.current_town.tile_map.map[(pos_x, pos_y)])
 
 

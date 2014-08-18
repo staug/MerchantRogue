@@ -28,6 +28,7 @@ class GameObject():
     def __init__(self,
                  name,
                  object_type,
+                 town=None,
                  weight=None,
                  volume=None,
                  regular_value=None,
@@ -38,7 +39,9 @@ class GameObject():
                  part_of_inventory=None,
                  displayable_object=None):
 
+        self.id = "Object#" + name + str(id(self))
         self.name = name
+        self.town = town
         self.object_type = object_type
         self.equipment = equipment
         self.breakable_parts = breakable_parts
@@ -89,6 +92,7 @@ class GameObject():
         pass
 
     def draw(self):
+        assert self.displayable_object, "GameObject: No displayable object set but a draw was requested"
         if self.displayable_object:
             self.displayable_object.draw()
 
@@ -185,14 +189,14 @@ class Door(GameObject):
 
         super().__init__("Door",
                          GameObject.DECORATION,
+                         town=town,
                          action_when_player=door_open,
-                         displayable_object=DisplayableObject(
-                             town=town,
-                             movable=False,
-                             blocking=False,
-                             position_on_tile=position_on_tile,
-                             graphical_representation=Door.get_graphical_rep(style, orientation, closed, locked),
-                             delayed_register=True)
+                         displayable_object=DisplayableObject(movable=False, blocking=False,
+                                                              position_on_tile=position_on_tile,
+                                                              graphical_representation=Door.get_graphical_rep(style,
+                                                                                                              orientation,
+                                                                                                              closed,
+                                                                                                              locked))
         )
         self.locked = locked
         self.style = style
