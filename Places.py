@@ -266,8 +266,8 @@ class Tile(object):
 
 
     def __str__(self):
-        part1 = "{}x{} Floor characteristices: {} [blocking: {}] {}".format(
-            self.position[0], self.position[1], self.floor_type
+        part1 = "{}x{} Floor characteristices: {} [blocking: {}]".format(
+            self.position[0], self.position[1], self.floor_type, self.blocking
         )
         part2 = ""
         if self.name_of_things_on_tile:
@@ -464,7 +464,13 @@ class TownTileMap(TileMap):
                 for place in self.places:
                     if tile_map[place].floor_type == Tile.FLOOR and \
                                     self.compute_tile_weight(place[0], place[1], (Tile.WALL),
-                                                tile_map, max_x, max_y) in (6, 12):
+                                                             tile_map, max_x, max_y) == 3 and tile_map[
+                                place[0] + 1, place[1] - 1].floor_type == Tile.FLOOR:
+                        additional_walls.append(place)
+                    elif tile_map[place].floor_type == Tile.FLOOR and \
+                                    self.compute_tile_weight(place[0], place[1], (Tile.WALL),
+                                                             tile_map, max_x, max_y) == 6 and tile_map[
+                                place[0] + 1, place[1] + 1].floor_type == Tile.FLOOR:
                         additional_walls.append(place)
                 #for place in additional_walls:
                 #    tile_map[place].floor_type = Tile.WALL
@@ -585,12 +591,12 @@ class TownTileMap(TileMap):
                         if len(possible_starts) > 0:
                             self.default_start_player_position = random.choice(possible_starts)
 
-            # finish building it - Now redecorating and carving really the door
-            for room in room_placed:
-                room.add_deco(self.map, self.max_x, self.max_y)
-            # and adding the room to the official list of room
-            for room in room_placed:
-                self.rooms.append(room)
+                # finish building it - Now redecorating and carving really the door
+                for room in room_placed:
+                    room.add_deco(self.map, self.max_x, self.max_y)
+                # and adding the room to the official list of room
+                for room in room_placed:
+                    self.rooms.append(room)
 
     def render(self, style):
 
@@ -626,16 +632,19 @@ class TownTileMap(TileMap):
             x_dev = file_tile_size[0]
             y_dev = file_tile_size[1]
             tile = [
-                source_file.subsurface(pygame.Rect((origin_x + 3 * x_dev, origin_y + 0 * y_dev), file_tile_size)).copy(),
                 source_file.subsurface(pygame.Rect((origin_x + 1 * x_dev, origin_y + 1 * y_dev), file_tile_size)).copy(),
-                source_file.subsurface(pygame.Rect((origin_x + 1 * x_dev, origin_y + 0 * y_dev), file_tile_size)).copy(),
+                source_file.subsurface(
+                    pygame.Rect((origin_x + 1 * x_dev, origin_y + 1 * y_dev), file_tile_size)).copy(),
                 source_file.subsurface(pygame.Rect((origin_x + 0 * x_dev, origin_y + 2 * y_dev), file_tile_size)).copy(),
+                source_file.subsurface(
+                    pygame.Rect((origin_x + 0 * x_dev, origin_y + 2 * y_dev), file_tile_size)).copy(),
                 source_file.subsurface(pygame.Rect((origin_x + 0 * x_dev, origin_y + 1 * y_dev), file_tile_size)).copy(),
                 source_file.subsurface(pygame.Rect((origin_x + 0 * x_dev, origin_y + 1 * y_dev), file_tile_size)).copy(),
                 source_file.subsurface(pygame.Rect((origin_x + 0 * x_dev, origin_y + 0 * y_dev), file_tile_size)).copy(),
                 source_file.subsurface(pygame.Rect((origin_x + 3 * x_dev, origin_y + 1 * y_dev), file_tile_size)).copy(),
-                source_file.subsurface(pygame.Rect((origin_x + 1 * x_dev, origin_y + 0 * y_dev), file_tile_size)).copy(),
                 source_file.subsurface(pygame.Rect((origin_x + 2 * x_dev, origin_y + 2 * y_dev), file_tile_size)).copy(),
+                source_file.subsurface(
+                    pygame.Rect((origin_x + 2 * x_dev, origin_y + 2 * y_dev), file_tile_size)).copy(),
                 source_file.subsurface(pygame.Rect((origin_x + 1 * x_dev, origin_y + 0 * y_dev), file_tile_size)).copy(),
                 source_file.subsurface(pygame.Rect((origin_x + 4 * x_dev, origin_y + 2 * y_dev), file_tile_size)).copy(),
                 source_file.subsurface(pygame.Rect((origin_x + 2 * x_dev, origin_y + 0 * y_dev), file_tile_size)).copy(),

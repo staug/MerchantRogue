@@ -3,8 +3,9 @@ BUG Listing
 TileMap:
 * when the map is regenerated, old doors may be kept [FIXED]
 * piece of furniture may prevent the movement as they appear just near the door [FIXED]
-* room generation: sometime the inner rooms are united by one corner only, this prevents the possibility of moving
-* corner walls not showing correctly (implement smoothwall function, check that the wall images are correct)
+* room generation: sometime the inner rooms are united by one corner only, this prevents the possibility of moving [FIXED?]
+* corner walls not showing correctly (implement smoothwall function, check that the wall images are correct) [FIXED]
+* Regeneration corrupt all items [FIXED]
 
 GUI:
 * If a textbox is moved, then its text is not shown
