@@ -35,7 +35,7 @@ class Game():
         GameData.time_ticker = Util.Ticker()
 
         Util.DebugEvent("Building new world")
-        GameData.town_graph = Places.TownGraph([Places.Town(random.randint(2,7)) for x in range(number_town)])
+        GameData.town_graph = Places.TownGraph([Places.Town(random.randint(2, 7)) for x in range(number_town)])
 
         Util.DebugEvent("Choosing the initial town")
         GameData.current_town = random.choice(GameData.town_graph.towns)
@@ -44,8 +44,9 @@ class Game():
         Util.DebugEvent("Setting up player")
         GameData.player = Player.Player(GameData.current_town,
                                         graphical_representation=AnimatedSpriteObject(Constants.DAWNLIKE_STYLE,
-                                                                                      "Characters", "Player", (0, 0)),
-                           position_on_tile=GameData.current_town.tile_map.default_start_player_position,)
+                                                                                      "Characters", "Player",
+                                                                                      (16, 112)),
+                                        position_on_tile=GameData.current_town.tile_map.default_start_player_position)
 
         Util.DebugEvent("Setting up objects in the towns...")
         for town in GameData.town_graph.towns:
@@ -57,11 +58,10 @@ class Game():
                 #                        position_on_tile=town.tile_map.get_place_in_building(Places.Building.TRADING_POST),
                 #                        graphical_representation=Player.AnimatedSpriteObject(True, "Characters", "Player", coordinates))
                 npc = Player.NonPlayableCharacter(town,
-                                                  speed=(1, 5),
-                                       position_on_tile=(i * 1, i * 2),
-                                       graphical_representation=AnimatedSpriteObject(Constants.DAWNLIKE_STYLE,
-                                                                                     "Characters", "Player",
-                                                                                     coordinates))
+                                                  speed=(1, 3),
+                                                  position_on_tile=(i * 1, i * 2),
+                                                  graphical_representation=AnimatedSpriteObject(
+                                                      Constants.DAWNLIKE_STYLE, "Characters", "Player", coordinates))
 
                 GameData.register_object(npc)
 
@@ -180,9 +180,8 @@ if __name__ == '__main__':
     print("All objects init done - starting time and main loop")
     Game.kick_off_timer_in_place(GameData.current_town)
 
-    # pygame.mouse.set_cursor((16, 16), (0,0), *pygame.cursors.compile(Constants.SWORD_MASK, black="0", white=".", xor="o"))
-    pygame.mouse.set_cursor(*pygame.cursors.load_xbm(Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "cursor2.xbm",
-                                                     Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "cursor2-mask.xbm"))
+    # pygame.mouse.set_cursor(*pygame.cursors.load_xbm(Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "cursor2.xbm",
+    #                                                 Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "cursor2-mask.xbm"))
 
     #screen.sub(GuiElements.KenneyPopupLabelCancel("This is a very very long message.\nI test wrapper.\nAgain a very very long sentecne that never ends\nShort.", style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
     #screen.sub(GuiElements.KenneyGetStringDialog("Enter your very big name", test, style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))

@@ -54,11 +54,18 @@ class SpriteObject(object):
                       animation_coordinates_in_file, 1.0, Constants.DAWNLIKE_TILE_SIZE, Constants.TILE_SIZE)]
                 )
         self.owner = None
-
+        self.going_right = False
         self.surface_to_draw = None
         self.surface_memory = None
 
     def graphical_move(self, old_tile_position, new_tile_position):
+        if new_tile_position[0] < old_tile_position[0] and self.going_right:
+            self.animation.flip(True, False)
+            self.going_right = False
+        elif new_tile_position[0] > old_tile_position[0] and not self.going_right:
+            self.animation.flip(True, False)
+            self.going_right = True
+
         old_pos_x = old_tile_position[0] * Constants.TILE_SIZE[0]
         old_pos_y = old_tile_position[1] * Constants.TILE_SIZE[1]
         self.surface_to_draw.blit(self.surface_memory, (old_pos_x, old_pos_y),
