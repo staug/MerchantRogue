@@ -261,6 +261,7 @@ class TraderNPC(NonPlayableCharacter):
                          speed=speed)
         self.friendliness_setting = random.randint(-10, 10)
 
+
 class InventoryObject(object):
 
     QUANTITY_SLOT = 1
