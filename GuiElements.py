@@ -171,7 +171,7 @@ class KenneyContainer(planes.gui.Container):
                  style=None,
                  preferred_size=(10, 10),
                  normalize_size=True,
-                 ignore_last_group_height=False,
+                 ignore_last_group_dimensions=False,
                  pos=(0, 0)):
         """Initialise.
            style is an instance of kenney style, which should hold the image name as well as the
@@ -193,7 +193,7 @@ class KenneyContainer(planes.gui.Container):
         self.subplanes_alignment = {}  # tuple (h_align, v_align) to remember the alignment of each.
 
         self.normalize_size = normalize_size  # indicate if we should normalize all widget size to the biggest
-        self.ignore_last_group_height = ignore_last_group_height
+        self.ignore_last_group_height = ignore_last_group_dimensions
         self.rect.topleft = pos
         return
 
@@ -218,68 +218,117 @@ class KenneyContainer(planes.gui.Container):
             else:
                 group_horizontal[-1].append([name, required_height, required_width])
 
-        max_normalized_widget_width = max_widget_height = 0
-        max_line_width = 0
+        line_width = []
+        line_height = []
         for index, widget_group in enumerate(group_horizontal):
             widget_group_width = 0
+            widget_group_max_height = 0
             for widget in widget_group:
-                if index != len(group_horizontal) - 1 or not self.ignore_last_group_height:
-                    if max_widget_height < widget[1]:
-                        max_widget_height = widget[1]
+                # Is this widget higher than the other in the group? If yes, this is the new reference for this line.
+                if widget_group_max_height < widget[1]:
+                        widget_group_max_height = widget[1]
+                # Width: we simply add the width
                 widget_group_width += widget[2]
-            current_line_width = widget_group_width + (len(widget_group) - 1) * self.style.padding_h
-            normalized_widget_width = widget_group_width // len(widget_group)
-            if max_normalized_widget_width < normalized_widget_width:
-                max_normalized_widget_width = normalized_widget_width
-            if current_line_width > max_line_width:
-                max_line_width = current_line_width
+            line_width.append(widget_group_width + (len(widget_group) - 1) * self.style.padding_h)
+            line_height.append(widget_group_max_height)
 
-        ypos = margin_top
-        max_right_pos = 0
+        max_line_width = max(line_width)
+        normalize_height = max(line_height)
+        if self.ignore_last_group_height:
+            normalize_height = 0
+            max_line_width = 0
+            for index, height in enumerate(line_height):
+                if index != len(line_height) - 1 and line_height[index] > normalize_height:
+                    normalize_height = line_height[index]
+            for index, width in enumerate(line_width):
+                if index != len(line_width) - 1 and line_width[index] > max_line_width:
+                    max_line_width = line_width[index]
 
-        for widget_group in group_horizontal:
+        total_width = margin_left + max(max_line_width, line_width[len(line_width) - 1]) + margin_right
 
-            xpos = margin_left
-            for index, widget in enumerate(widget_group):
-                name = widget[0]
-                required_height = widget[1]
-                required_width = widget[2]
+        y_pos = margin_top
+
+        for index_group, widget_group in enumerate(group_horizontal):
+
+            x_pos = margin_left
+
+            if not self.ignore_last_group_height or index_group != len(group_horizontal) - 1:
+                for index, widget in enumerate(widget_group):
+                    name = widget[0]
+                    required_height = widget[1]
+                    required_width = widget[2]
+                    if self.normalize_size:
+                        required_height = normalize_height
+                        required_width = (max_line_width - (len(widget_group) - 1) * self.style.padding_h) // len(widget_group)
+                    elif index == 0:
+                        # we need to center the widgets
+                        x_pos = (total_width - line_width[index_group]) // 2
+                    (h_plane_align,
+                     v_plane_align,
+                     fix_width,
+                     fix_height,
+                     stack_horizontal) = self.subplanes_alignment[name]
+
+                    if v_plane_align == KenneyContainer.V_ALIGN_MIDDLE:
+                        self.subplanes[name].rect.centery = y_pos + int(required_height / 2)
+                    elif v_plane_align == KenneyContainer.V_ALIGN_TOP:
+                        self.subplanes[name].rect.top = y_pos
+                    elif v_plane_align == KenneyContainer.V_ALIGN_BOTTOM:
+                        self.subplanes[name].rect.bottom = y_pos + required_height
+
+                    if h_plane_align == KenneyContainer.H_ALIGN_CENTER:
+                        self.subplanes[name].rect.centerx = x_pos + int(required_width / 2)
+                    elif h_plane_align == KenneyContainer.H_ALIGN_LEFT:
+                        self.subplanes[name].rect.left = x_pos
+                    elif h_plane_align == KenneyContainer.H_ALIGN_RIGHT:
+                        self.subplanes[name].rect.right = x_pos + required_width
+
+                    x_pos += required_width + self.style.padding_h
+
                 if self.normalize_size:
-                    required_height = max_widget_height
-                    required_width = max_normalized_widget_width
-                (h_plane_align,
-                 v_plane_align,
-                 fix_width,
-                 fix_height,
-                 stack_horizontal) = self.subplanes_alignment[name]
-
-                if v_plane_align == KenneyContainer.V_ALIGN_MIDDLE:
-                    self.subplanes[name].rect.centery = ypos + int(required_height / 2)
-                elif v_plane_align == KenneyContainer.V_ALIGN_TOP:
-                    self.subplanes[name].rect.top = ypos
-                elif v_plane_align == KenneyContainer.V_ALIGN_BOTTOM:
-                    self.subplanes[name].rect.bottom = ypos + required_height
-
-                one_widget_space = max_line_width // len(widget_group)
-                if h_plane_align == KenneyContainer.H_ALIGN_CENTER:
-                    self.subplanes[name].rect.centerx = xpos + int(one_widget_space / 2)
-                elif h_plane_align == KenneyContainer.H_ALIGN_LEFT:
-                    self.subplanes[name].rect.left = xpos
-                elif h_plane_align == KenneyContainer.H_ALIGN_RIGHT:
-                    self.subplanes[name].rect.right = xpos + one_widget_space
-
-                xpos += one_widget_space
-
-                if self.subplanes[name].rect.right > max_right_pos:
-                    max_right_pos = self.subplanes[name].rect.right
-
-            if self.normalize_size:
-                ypos += (max_widget_height + self.style.padding_v)
+                    y_pos += normalize_height + self.style.padding_v
+                else:
+                    y_pos += line_height[index_group] + self.style.padding_v
             else:
-                ypos += ([max(widget[1]) for widget in widget_group] + self.style.padding_v)
+                for index, widget in enumerate(widget_group):
+                    name = widget[0]
+                    required_height = widget[1]
+                    required_width = widget[2]
+                    if self.normalize_size:
+                        required_height = normalize_height
+                        required_width = (line_width[index_group] - (len(widget_group) - 1) * self.style.padding_h) // len(widget_group)
+                    elif index == 0:
+                        # we need to center the widgets
+                        x_pos = (total_width - line_width[index_group]) // 2
+                    (h_plane_align,
+                     v_plane_align,
+                     fix_width,
+                     fix_height,
+                     stack_horizontal) = self.subplanes_alignment[name]
 
-        self.rect.height = max(self.preferred_size[1], ypos + margin_bottom)
-        self.rect.width = max(self.preferred_size[0], max_right_pos + margin_right)
+                    if v_plane_align == KenneyContainer.V_ALIGN_MIDDLE:
+                        self.subplanes[name].rect.centery = y_pos + int(required_height / 2)
+                    elif v_plane_align == KenneyContainer.V_ALIGN_TOP:
+                        self.subplanes[name].rect.top = y_pos
+                    elif v_plane_align == KenneyContainer.V_ALIGN_BOTTOM:
+                        self.subplanes[name].rect.bottom = y_pos + required_height
+
+                    if h_plane_align == KenneyContainer.H_ALIGN_CENTER:
+                        self.subplanes[name].rect.centerx = x_pos + int(required_width / 2)
+                    elif h_plane_align == KenneyContainer.H_ALIGN_LEFT:
+                        self.subplanes[name].rect.left = x_pos
+                    elif h_plane_align == KenneyContainer.H_ALIGN_RIGHT:
+                        self.subplanes[name].rect.right = x_pos + required_width
+
+                    x_pos += required_width + self.style.padding_h
+
+                if self.normalize_size:
+                    y_pos += normalize_height + self.style.padding_v
+                else:
+                    y_pos += line_height[index_group] + self.style.padding_v
+
+        self.rect.height = max(self.preferred_size[1], y_pos + margin_bottom)
+        self.rect.width = max(self.preferred_size[0], total_width)
 
     def render_background(self):
         if self.style.is_included:
@@ -396,7 +445,7 @@ class KenneyPopupLabel(KenneyContainer):
             style = Constants.DEFAULT_CONTAINER_STYLE
         self.callback = callback
 
-        KenneyContainer.__init__(self, style=style, preferred_size=(10, 20), ignore_last_group_height=True, pos=pos)
+        KenneyContainer.__init__(self, style=style, preferred_size=(10, 20), ignore_last_group_dimensions=True, pos=pos)
 
         lines = message.split("\n")
         for line_no in range(len(lines)):
@@ -444,7 +493,7 @@ class KenneyPopupLabelCancel(KenneyContainer):
         self.callback_ok = callback_ok
         self.callback_cancel = callback_cancel
 
-        KenneyContainer.__init__(self, style=style, preferred_size=(10, 20), ignore_last_group_height=True, pos=pos)
+        KenneyContainer.__init__(self, style=style, preferred_size=(10, 20), ignore_last_group_dimensions=True, pos=pos)
 
         lines = message.split("\n")
         for line_no in range(len(lines)):
@@ -542,7 +591,8 @@ class KenneyPopupOption(KenneyContainer):
         KenneyContainer.__init__(self,
                                  style=style,
                                  preferred_size=(width, height),
-                                 ignore_last_group_height=True,
+                                 ignore_last_group_dimensions=True,
+                                 normalize_size=True,
                                  pos=pos)
         # the options are a list of list
         self.button_groups = []
@@ -558,8 +608,8 @@ class KenneyPopupOption(KenneyContainer):
                 button = KenneyWidgetOptionButton(group=group, use_image=use_image,
                                                   style=button_style, selected=selected)
                 self.button_groups[-1].add_button(button, option)
-                self.sub(button)
-                self.sub(KenneyWidgetLabel(str(option)), stack_horizontal=True)
+                self.sub(button, h_align=KenneyContainer.H_ALIGN_RIGHT)
+                self.sub(KenneyWidgetLabel(str(option)), stack_horizontal=True, h_align=KenneyContainer.H_ALIGN_LEFT)
         width = button_style.get_font_size_for("Cancel")[0]
         self.sub(KenneyWidgetButton(self.ok, label="OK", style=button_style, width=width))
         self.sub(KenneyWidgetButton(self.cancel, label="Cancel", style=button_style, width=width),
@@ -599,7 +649,7 @@ class KenneyGetStringDialog(KenneyContainer):
         if not button_style:
             button_style = Constants.DEFAULT_WIDGET_STYLE
         # Base class __init__()
-        KenneyContainer.__init__(self, style=style, ignore_last_group_height=True, pos=pos)
+        KenneyContainer.__init__(self, style=style, ignore_last_group_dimensions=True, pos=pos)
 
         self.draggable = False
 
@@ -706,7 +756,7 @@ class KenneyWidgetStyle:
         :return: a size tuple.
         """
         if self.font:
-            return self.font.render(text, True, self.text_color).get_rect().size
+            return self.font.size(text)
         else:
             dimensions = (self.default_width, self.default_height)
             return dimensions
@@ -757,6 +807,11 @@ class KenneyWidgetLabel(planes.Plane):
         required_width = style.default_width
         required_height = style.default_height
 
+        if width:
+            required_width = width
+        if height:
+            required_height = height
+
         self.follow_object = follow_object
         self.follow_attribute = follow_attribute
 
@@ -767,9 +822,7 @@ class KenneyWidgetLabel(planes.Plane):
 
         if text is not None:
             self.text = text
-            possible_surface = self.style.font.render(self.text, True, self.style.text_color)
-            required_width = possible_surface.get_rect().width
-            required_height = possible_surface.get_rect().height
+            (required_width, required_height) = self.style.font.size(self.text)
         else:
             self.text = ""
 
@@ -858,9 +911,9 @@ class KenneyWidgetButton(KenneyWidget, KenneyWidgetLabel):
             height = style.default_height
 
         if label is not None:
-            possible_surface = style.font.render(label, True, style.text_color)
-            width = max(possible_surface.get_rect().width + 20, width)
-            height = max(possible_surface.get_rect().height + 10, height)
+            size = style.font.size(label)
+            width = max(size[0] + 20, width)
+            height = max(size[1] + 10, height)
 
         # Initialise self.background
         KenneyWidget.__init__(self, style, width, height=height)
