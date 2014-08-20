@@ -187,7 +187,8 @@ if __name__ == '__main__':
     screen.sub(GuiElements.KenneyGetStringDialog("Enter your very big name", test, style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
     #screen.sub(planes.gui.OptionSelector("test", ["test1", "test2"], test))
     #screen.sub(GuiElements.KenneyWidgetIconButton(test, Constants.ICON_IMAGE_RESOURCE_FOLDER+"help_16x16.png", pos=(200,200)))
-    screen.sub(GuiElements.KenneyPopupOption([["Apple", "Lemon", "Banana"], ["Axe", "Skull"]], use_image=False))
+    screen.sub(GuiElements.KenneyPopupOption([["Apple", "Lemon", "Banana"], ["Axe", "Skull"]], use_image=True,
+                                             style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
     while True:
 
         player_took_action = False
