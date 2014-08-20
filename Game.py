@@ -183,11 +183,11 @@ if __name__ == '__main__':
     # pygame.mouse.set_cursor(*pygame.cursors.load_xbm(Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "cursor2.xbm",
     #                                                 Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "cursor2-mask.xbm"))
 
-    #screen.sub(GuiElements.KenneyPopupLabelCancel("This is a very very long message.\nI test wrapper.\nAgain a very very long sentecne that never ends\nShort.", style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
-    #screen.sub(GuiElements.KenneyGetStringDialog("Enter your very big name", test, style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
+    screen.sub(GuiElements.KenneyPopupLabelCancel("This is a very very long message.\nI test wrapper.\nAgain a very very long sentecne that never ends\nShort.", pos=(200, 100), style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
+    screen.sub(GuiElements.KenneyGetStringDialog("Enter your very big name", test, style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
     #screen.sub(planes.gui.OptionSelector("test", ["test1", "test2"], test))
     #screen.sub(GuiElements.KenneyWidgetIconButton(test, Constants.ICON_IMAGE_RESOURCE_FOLDER+"help_16x16.png", pos=(200,200)))
-    screen.sub(GuiElements.KenneyPopupOption([["Apple", "Lemon", "Banana"], ["Axe", "Skull"]], use_image=True))
+    screen.sub(GuiElements.KenneyPopupOption([["Apple", "Lemon", "Banana"], ["Axe", "Skull"]], use_image=False))
     while True:
 
         player_took_action = False
