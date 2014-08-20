@@ -227,7 +227,7 @@ class KenneyContainer(planes.gui.Container):
             for widget in widget_group:
                 # Is this widget higher than the other in the group? If yes, this is the new reference for this line.
                 if widget_group_max_height < widget[1]:
-                        widget_group_max_height = widget[1]
+                    widget_group_max_height = widget[1]
                 # Width: we simply add the width
                 widget_group_width += widget[2]
             line_width.append(widget_group_width + (len(widget_group) - 1) * self.style.padding_h)
@@ -283,9 +283,6 @@ class KenneyContainer(planes.gui.Container):
 
         self.rect.height = max(self.preferred_size[1], y_pos + margin_bottom - self.style.padding_v)
         self.rect.width = max(self.preferred_size[0], total_width)
-
-        print("Line height: ".format(line_height))
-
 
     def render_background(self):
         if self.style.is_included:
@@ -999,7 +996,7 @@ class KenneyWidgetIconButton(KenneyWidget, KenneyWidgetLabel):
         # """
         # if self.clicked_counter:
         # self.clicked_counter = self.clicked_counter - 1
-        #     if not self.clicked_counter:
+        # if not self.clicked_counter:
         #         # Just turned zero, restore original background
         #         self.current_color = self.background_color
         KenneyWidgetLabel.update(self)
@@ -1064,7 +1061,6 @@ class KenneyWidgetOptionButton(KenneyWidget, KenneyWidgetLabel):
         KenneyWidget.__init__(self, style, width, height=height)
         # Now call base class.
         KenneyWidgetLabel.__init__(self, width=width, height=height, style=style, pos=pos)
-        print("HEIGHT: {} {}".format(height, self.rect.height))
         # Overwrite Plane base class attributes
         if self.icon_image:
             self.background = self.icon_image
@@ -1330,7 +1326,7 @@ class ImagePlane(Plane):
 
         # print("Width: {} Height: {} Camera: Top {}/ Left {} Bottom {} Right {}".format(
         # self.image_size[0], self.image_size[1],
-        #     self.camera_rect.top, self.camera_rect.left, self.camera_rect.bottom, self.camera_rect.right))
+        # self.camera_rect.top, self.camera_rect.left, self.camera_rect.bottom, self.camera_rect.right))
 
         self.camera_rect.move_ip(move_x, move_y)
         if self.camera_rect.left < 0:

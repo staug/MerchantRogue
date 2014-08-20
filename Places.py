@@ -405,6 +405,7 @@ class TownTileMap(TileMap):
 
             def __init__(self, town, width, height, top_x, top_y, building):
                 self.town = town
+                self.connected_by_path = False
                 self.places = []
                 self.doors = []
                 self.building = building
@@ -568,11 +569,11 @@ class TownTileMap(TileMap):
                     for door in room.doors:
                         self.map[door[0]].floor_type = Tile.FLOOR
 
-                for room in room_placed:
+                random.shuffle(room_placed)
+
+                for index, room in enumerate(room_placed[:-1]):
                     door1 = (room.doors[0])[0]
-                    door2 = (random.choice(room_placed).doors[0])[0]
-                    while door1[0] == door2[0] and door1[1] == door2[1]:
-                        door2 = (random.choice(room_placed).doors[0])[0]
+                    door2 = (room_placed[index + 1].doors[0])[0]
                     astar = Util.AStar(Util.SQ_MapHandler(self.map, self.max_x, self.max_y))
                     p = astar.findPath(Util.SQ_Location(door1[0], door1[1]), Util.SQ_Location(door2[0], door2[1]))
 
