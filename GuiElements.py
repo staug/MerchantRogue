@@ -292,7 +292,238 @@ class KenneyContainer(planes.gui.Container):
                 # Not: this adds an extra 10 margin all around!
                 for name in self.subplanes_list:
                     self.subplanes[name].rect.left += 10
-                    self.subplanes[name].rect.top += 10
+                    self.subplanes[name].rect.top += 5
+                self.rect.width += 20
+                self.rect.height += 20
+
+                group_horizontal = []
+                # First step: organize the widgets by horizontal group
+                for name in self.subplanes_list:
+                    (h_plane_align, v_plane_align, fix_width, fix_height, stack_horizontal) = self.subplanes_alignment[
+                        name]
+                    required_height = self.subplanes[name].rect.height
+                    if fix_height:
+                        required_height = fix_height
+                    if not stack_horizontal:
+                        group_horizontal.append([[name, required_height]])
+                    else:
+                        group_horizontal[-1].append([name, required_height])
+
+                last_widget_height = 0
+                for widget in group_horizontal[-1]:
+                    # Is this widget higher than the other in the group? If yes, this is the new reference for this line.
+                    if last_widget_height < widget[1]:
+                        last_widget_height = widget[1]
+
+                bottom_margin = last_widget_height + 20
+                internal_margin = [[10, 10, 10, bottom_margin]]
+
+                # and we need to move the last widget group by an additional 5
+                for widget_data in group_horizontal[-1]:
+                    self.subplanes[widget_data[0]].rect.bottom = (self.rect.height - 10)
+
+                self.background = IncludedSurface.render(self.rect.size, list_image,
+                                                         list_internal_margin=internal_margin)
+            else:
+                self.background = IncludedSurface.render(self.rect.size, list_image)
+        else:
+            self.background = ScaledSurface.render(self.rect.size,
+                                                   Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "panel_" + self.style.color + ".png")
+
+    def sub(self,
+            plane,
+            h_align=H_ALIGN_CENTER,
+            v_align=V_ALIGN_MIDDLE,
+            fix_width=None,
+            fix_height=None,
+            stack_horizontal=False):
+        """
+        Resize the container, update the position of plane and add it as a subplane.
+        This will also repaint TMBContainer.background.
+        """
+
+        # Adapted from gui.Container method
+
+        # First add the subplane by calling the base class method.
+        # This also cares for re-adding an already existing subplane.
+        planes.Plane.sub(self, plane)
+        self.subplanes_alignment[plane.name] = (h_align, v_align, fix_width, fix_height, stack_horizontal)
+
+        # Resize and recreate background
+        self._resize()
+        self.render_background()
+        self.redraw()
+
+        return
+
+    def redraw(self):
+        """
+        Redraw the container image using the background.
+        This also creates a new rendersurface.
+        """
+        self.image = self.background.copy()
+        self.rendersurface = self.image.copy()
+        return
+
+    def remove(self, plane_identifier, resize_background=False):
+        """
+        Remove the subplane, then reposition remaining subplanes and resize the container.
+        """
+        # Adapted from gui.Container method
+        # Accept Plane name as well as Plane instance
+        if isinstance(plane_identifier, planes.Plane):
+            name = plane_identifier.name
+        else:
+            name = plane_identifier
+        planes.Plane.remove(self, name)
+
+        # Now shrink and adapt background
+        if resize_background:
+            self._resize()
+            self.render_background()
+
+        self.redraw()
+        return
+
+
+class KenneyMultiColumnContainer(planes.gui.Container):
+    """A Kenney Container that can hold multiple column.
+    """
+
+    V_ALIGN_MIDDLE = "middle"
+    V_ALIGN_TOP = "top"
+    V_ALIGN_BOTTOM = "bottom"
+    H_ALIGN_CENTER = "center"
+    H_ALIGN_LEFT = "left"
+    H_ALIGN_RIGHT = "right"
+
+    def __init__(self,
+                 name=None,
+                 style=None,
+                 preferred_size=(10, 10),
+                 normalize_size=True,
+                 ignore_last_group_dimensions=False,
+                 pos=(0, 0)):
+        """Initialise.
+           style is an instance of kenney style, which should hold the image name as well as the
+           default margins & paddings...
+        """
+        # Call base
+        if not name:
+            name = str(id(self))
+        self.name = name
+        planes.gui.Container.__init__(self, name, style.padding_v)
+        # save main arguments
+        self.style = style
+        self.background = None
+        if not (preferred_size and preferred_size[0] and preferred_size[1]):
+            preferred_size = (10, 10)
+        self.preferred_size = preferred_size
+
+        self.draggable = True
+        self.grab = False
+        self.subplanes_alignment = {}  # tuple (h_align, v_align) to remember the alignment of each.
+
+        self.normalize_size = normalize_size  # indicate if we should normalize all widget size to the biggest
+        self.ignore_last_group_height = ignore_last_group_dimensions
+        self.rect.topleft = pos
+        return
+
+    def _resize(self):
+        margin_top = self.style.margin_top  # this is the height of the top part
+        margin_bottom = self.style.margin_bottom  # this is the height of the bottom part
+        margin_left = self.style.margin_left  # this is the height of the bottom part
+        margin_right = self.style.margin_right  # this is the height of the bottom part
+
+        group_horizontal = []
+        # First step: organize the widgets by horizontal group
+        for name in self.subplanes_list:
+            (h_plane_align, v_plane_align, fix_width, fix_height, stack_horizontal) = self.subplanes_alignment[name]
+            required_height = self.subplanes[name].rect.height
+            if fix_height:
+                required_height = fix_height
+            required_width = self.subplanes[name].rect.width
+            if fix_width:
+                required_width = fix_width
+            if not stack_horizontal:
+                group_horizontal.append([[name, required_height, required_width]])
+            else:
+                group_horizontal[-1].append([name, required_height, required_width])
+
+        line_width = []
+        line_height = []
+        for index, widget_group in enumerate(group_horizontal):
+            widget_group_width = 0
+            widget_group_max_height = 0
+            for widget in widget_group:
+                # Is this widget higher than the other in the group? If yes, this is the new reference for this line.
+                if widget_group_max_height < widget[1]:
+                    widget_group_max_height = widget[1]
+                # Width: we simply add the width
+                widget_group_width += widget[2]
+            line_width.append(widget_group_width + (len(widget_group) - 1) * self.style.padding_h)
+            line_height.append(widget_group_max_height)
+
+        max_line_width = max(line_width)
+        max_line_height_except_last = max_line_height = max(line_height)
+
+        total_width = margin_left + max_line_width + margin_right
+
+        if self.ignore_last_group_height and len(group_horizontal) > 1:
+            max_line_height_except_last = max(line_height[0:len(group_horizontal) - 1])
+
+        y_pos = margin_top
+
+        for index_group, widget_group in enumerate(group_horizontal):
+
+            x_pos = margin_left
+            required_height = 0
+
+            for index, widget in enumerate(widget_group):
+                name = widget[0]
+                (h_plane_align,
+                 v_plane_align,
+                 fix_width,
+                 fix_height,
+                 stack_horizontal) = self.subplanes_alignment[name]
+
+                required_height = line_height[index_group]
+                if self.normalize_size:
+                    required_height = max_line_height
+                    if self.ignore_last_group_height and index_group != len(group_horizontal):
+                        required_height = max_line_height_except_last
+
+                required_width = widget[2]
+                if index == 0:
+                    if h_plane_align == KenneyContainer.H_ALIGN_CENTER:
+                        x_pos += (max_line_width - line_width[index_group]) // 2
+                    if h_plane_align == KenneyContainer.H_ALIGN_RIGHT:
+                        x_pos += max_line_width - line_width[index_group]
+
+                if v_plane_align == KenneyContainer.V_ALIGN_MIDDLE:
+                    self.subplanes[name].rect.centery = y_pos + int(required_height / 2)
+                elif v_plane_align == KenneyContainer.V_ALIGN_TOP:
+                    self.subplanes[name].rect.top = y_pos
+                elif v_plane_align == KenneyContainer.V_ALIGN_BOTTOM:
+                    self.subplanes[name].rect.bottom = y_pos + required_height
+
+                self.subplanes[name].rect.left = x_pos
+                x_pos += (required_width + self.style.padding_h)
+
+            y_pos += (required_height + self.style.padding_v)
+
+        self.rect.height = max(self.preferred_size[1], y_pos + margin_bottom - self.style.padding_v)
+        self.rect.width = max(self.preferred_size[0], total_width)
+
+    def render_background(self):
+        if self.style.is_included:
+            list_image = [Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "panel_" + self.style.background_color + ".png",
+                          Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "panelInset_" + self.style.color + ".png"]
+            if self.style.single_last_widget and len(self.subplanes) > 0:
+                # Not: this adds an extra 10 margin all around!
+                for name in self.subplanes_list:
+                    self.subplanes[name].rect.left += 10
+                    self.subplanes[name].rect.top += 5
                 self.rect.width += 20
                 self.rect.height += 20
 

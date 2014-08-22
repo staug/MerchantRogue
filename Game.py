@@ -17,8 +17,10 @@ import Constants
 import GameData
 import GuiElements
 
+
 def bing(*args):
     pass
+
 
 class Game():
     """
@@ -51,11 +53,11 @@ class Game():
         Util.DebugEvent("Setting up objects in the towns...")
         for town in GameData.town_graph.towns:
             for i in range(5):
-                image_coordinate_x = [x*16 for x in range(0, 7)]
-                image_coordinate_y = [y*16 for y in (3, 4, 7, 8)]
+                image_coordinate_x = [x * 16 for x in range(0, 7)]
+                image_coordinate_y = [y * 16 for y in (3, 4, 7, 8)]
                 coordinates = (random.choice(image_coordinate_x), random.choice(image_coordinate_y))
                 # npc = Player.TraderNPC(town,
-                #                        position_on_tile=town.tile_map.get_place_in_building(Places.Building.TRADING_POST),
+                # position_on_tile=town.tile_map.get_place_in_building(Places.Building.TRADING_POST),
                 #                        graphical_representation=Player.AnimatedSpriteObject(True, "Characters", "Player", coordinates))
                 npc = Player.NonPlayableCharacter(town,
                                                   speed=(1, 3),
@@ -146,8 +148,10 @@ class Game():
         """
         pass
 
+
 def test(*args, **kwargs):
     print("Dummy : args={} kwargs={}".format(args, kwargs))
+
 
 if __name__ == '__main__':
 
@@ -164,8 +168,9 @@ if __name__ == '__main__':
     Game.start_new_game(20)
 
     # Step 3 - Finish the graphical init for this town.
-    main_image = GuiElements.ImagePlane("Main Image", pygame.Rect((0, 0), Constants.PLACE_WINDOW_SIZE), Constants.TILE_SIZE,
-                                   image_size=GameData.current_town.tile_map.surface_memory.get_rect().size)
+    main_image = GuiElements.ImagePlane("Main Image", pygame.Rect((0, 0), Constants.PLACE_WINDOW_SIZE),
+                                        Constants.TILE_SIZE,
+                                        image_size=GameData.current_town.tile_map.surface_memory.get_rect().size)
     main_image.image.blit(GameData.current_town.tile_map.surface_memory, (0, 0))
     screen.sub(main_image)
     main_image.set_camera(Constants.PLACE_WINDOW_SIZE)
@@ -173,19 +178,21 @@ if __name__ == '__main__':
     main_image.draggable = False
     main_image.grab = True
     Game.assign_surface_to_displayable_objects(GameData.current_town,
-                                                       main_image.image,
-                                                       GameData.current_town.tile_map.surface_memory)
+                                               main_image.image,
+                                               GameData.current_town.tile_map.surface_memory)
 
     # END INITIALIZATION
     print("All objects init done - starting time and main loop")
     Game.kick_off_timer_in_place(GameData.current_town)
 
     # pygame.mouse.set_cursor(*pygame.cursors.load_xbm(Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "cursor2.xbm",
-    #                                                 Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "cursor2-mask.xbm"))
+    # Constants.KENNEY_IMAGE_RESOURCE_FOLDER + "cursor2-mask.xbm"))
 
-    screen.sub(GuiElements.KenneyPopupLabelCancel("This is a very very long message.\nI test wrapper.\nAgain a very very long sentecne that never ends\nShort.", pos=(200, 100), style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
-    screen.sub(GuiElements.KenneyGetStringDialog("Enter your very big name", test, style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
-    #screen.sub(planes.gui.OptionSelector("test", ["test1", "test2"], test))
+    screen.sub(GuiElements.KenneyPopupLabelCancel(
+        "This is a very very long message.\nI test wrapper.\nAgain a very very long sentecne that never ends\nShort.",
+        pos=(200, 100), style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
+    screen.sub(GuiElements.KenneyGetStringDialog("Enter your very big name", test,
+                                                 style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
     #screen.sub(GuiElements.KenneyWidgetIconButton(test, Constants.ICON_IMAGE_RESOURCE_FOLDER+"help_16x16.png", pos=(200,200)))
     screen.sub(GuiElements.KenneyPopupOption([["Apple", "Lemon", "Banana"], ["Axe", "Skull"]], use_image=True,
                                              style=GuiElements.KENNEY_CONTAINER_STYLE_INCLUDED))
@@ -203,7 +210,7 @@ if __name__ == '__main__':
                 event_box = GuiElements.KenneyPopupLabelCancel(event.message)
                 screen.sub(event_box)
                 event_box.rect.top = 100
-                event_box.rect.centerx=screen.rect.centerx
+                event_box.rect.centerx = screen.rect.centerx
             if event.type == Constants.DEBUG_EVENT:
                 print(event.message)
             if event.type == KEYDOWN:  #TODO: make sure no extra text box is active?
@@ -252,7 +259,6 @@ if __name__ == '__main__':
         screen.process(events)
         screen.update()
         screen.render()
-
 
         pygame.display.flip()
         clock.tick(25)
