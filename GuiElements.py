@@ -453,8 +453,7 @@ class KenneyMultiColumnContainer(planes.gui.Container):
                  v_plane_align,
                  fix_width,
                  fix_height,
-                 stack_horizontal,
-                 column_index) = self.subplanes_characteristics[name]
+                 stack_horizontal) = self.subplanes_characteristics[name]
                 required_height = self.subplanes[name].rect.height
                 if fix_height:
                     required_height = fix_height
@@ -480,34 +479,35 @@ class KenneyMultiColumnContainer(planes.gui.Container):
                         widget_group_max_height = widget[1]
                     # Width: we simply add the width
                     widget_group_width += widget[2]
-                list_of_line_width[index_column].append(widget_group_width + (len(widget_group) - 1) * self.style.padding_h)
+                list_of_line_width[index_column].append(
+                    widget_group_width + (len(widget_group) - 1) * self.style.padding_h)
                 list_of_line_height[index_column].append(widget_group_max_height)
 
         max_line_width_list = []
         for list_line_width in list_of_line_width:
             max_line_width_list.append(max(list_line_width))
 
-        total_width = margin_left + sum(max_line_width_list) + \
-                      2 * self.style.padding_h * (len(max_line_width_list) - 1) + \
-                      margin_right
+        total_width = margin_left + sum(max_line_width_list) + 2 * self.style.padding_h * (
+        len(max_line_width_list) - 1) + margin_right
 
         max_line_height_list = []
         for list_line_height in list_of_line_height:
             max_line_height_list.append(max(list_line_height))
 
-        max_line_height_except_last = 0
-        if self.ignore_last_group_dimensions and len(list_of_group_horizontal[0]) > 1:
-            max_line_height_except_last = max(list_of_line_height[0][0:len(list_of_group_horizontal) - 1])
+        max_line_height_except_last = 20
+        if self.ignore_last_group_dimensions and len(list_of_line_height[0]) > 1:
+            max_line_height_except_last = max(list_of_line_height[0][0:len(list_of_line_height[0]) - 1])
 
         y_pos_list = []
+        x_column_pos = margin_left
 
         for index_column, column in enumerate(self.columns):
             y_pos = margin_top
 
             for index_group, widget_group in enumerate(list_of_group_horizontal[index_column]):
 
-                x_pos = margin_left
                 required_height = 0
+                x_pos = x_column_pos
 
                 for index, widget in enumerate(widget_group):
                     name = widget[0]
@@ -519,16 +519,18 @@ class KenneyMultiColumnContainer(planes.gui.Container):
 
                     required_height = list_of_line_height[index_column][index_group]
                     if self.normalize_size:
-                        required_height = max_line_height_list[column_index]
-                        if column_index == 0 and self.ignore_last_group_dimensions and index_group != len(list_of_group_horizontal):
+                        required_height = max_line_height_list[index_column]
+                        if index_column == 0 and self.ignore_last_group_dimensions and index_group != len(
+                                list_of_group_horizontal):
                             required_height = max_line_height_except_last
 
                     required_width = widget[2]
                     if index == 0:
                         if h_plane_align == KenneyContainer.H_ALIGN_CENTER:
-                            x_pos += (max_line_width_list[column_index] - list_of_line_width[index_group]) // 2
+                            x_pos += (max_line_width_list[index_column] - list_of_line_width[index_column][
+                                index_group]) // 2
                         if h_plane_align == KenneyContainer.H_ALIGN_RIGHT:
-                            x_pos += max_line_width_list[column_index] - list_of_line_width[index_group]
+                            x_pos += max_line_width_list[index_column] - list_of_line_width[index_column][index_group]
 
                     if v_plane_align == KenneyContainer.V_ALIGN_MIDDLE:
                         self.subplanes[name].rect.centery = y_pos + int(required_height / 2)
@@ -541,7 +543,12 @@ class KenneyMultiColumnContainer(planes.gui.Container):
                     x_pos += (required_width + self.style.padding_h)
 
                 y_pos += (required_height + self.style.padding_v)
+
             y_pos_list.append(y_pos)
+            x_column_pos += (max_line_width_list[index_column] + 2 * self.style.padding_h)
+
+            # TODO; the last group of column 0 (OK/Cancel) needs to be shifted down AND centered if ignore last widget height!!
+            # Note: the y pos of the last widget group needs to be changed only if the ypos of teh others is < than y in pos 0
 
         self.rect.height = max(self.preferred_size[1], max(y_pos_list) + margin_bottom - self.style.padding_v)
         self.rect.width = max(self.preferred_size[0], total_width)
@@ -561,7 +568,8 @@ class KenneyMultiColumnContainer(planes.gui.Container):
                 group_horizontal = []
                 # First step: organize the widgets by horizontal group
                 for name in self.subplanes_list:
-                    (h_plane_align, v_plane_align, fix_width, fix_height, stack_horizontal, column_index) = self.subplanes_characteristics[
+                    (h_plane_align, v_plane_align, fix_width, fix_height, stack_horizontal, column_index) = \
+                        self.subplanes_characteristics[
                         name]
                     required_height = self.subplanes[name].rect.height
                     if fix_height:
@@ -611,15 +619,14 @@ class KenneyMultiColumnContainer(planes.gui.Container):
         # This also cares for re-adding an already existing subplane.
         planes.Plane.sub(self, plane)
         # Now, takes care of putting the container in the correct column.
-        while len(self.subplanes_list) < column_index:
-            self.subplanes_list.append([])
-        self.subplanes_list[column_index].append(plane.name)
+        while len(self.columns) <= column_index:
+            self.columns.append([])
+        self.columns[column_index].append(plane.name)
         self.subplanes_characteristics[plane.name] = (h_align,
                                                       v_align,
                                                       fix_width,
                                                       fix_height,
-                                                      stack_horizontal,
-                                                      column_index)
+                                                      stack_horizontal)
 
         # Resize and recreate background
         self._resize()
@@ -850,6 +857,128 @@ class KenneyPopupOption(KenneyContainer):
                 self.button_groups[-1].add_button(button, option)
                 self.sub(button)
                 self.sub(KenneyWidgetLabel(str(option)), stack_horizontal=True)
+        width = button_style.get_font_size_for("Cancel")[0]
+        self.sub(KenneyWidgetButton(self.ok, label="OK", style=button_style, width=width))
+        self.sub(KenneyWidgetButton(self.cancel, label="Cancel", style=button_style, width=width),
+                 stack_horizontal=True)
+
+        return
+
+    def ok(self, plane, event=None):
+        if self.callback_ok:
+            object_list = []
+            for group in self.button_groups:
+                for object_selected in group.get_selected_objects():
+                    object_list.append(object_selected)
+            self.callback_ok(source=self, event=event, object_selected=object_list)
+        self.destroy()
+        return
+
+    def cancel(self, plane, event=None):
+        if self.callback_cancel:
+            object_list = []
+            for group in self.button_groups:
+                for object_selected in group.get_selected_objects():
+                    object_list.append(object_selected)
+            self.callback_cancel(source=self, event=event, object_selected=object_list)
+        self.destroy()
+        return
+
+
+class KenneyPopupOptionMultiColumns(KenneyMultiColumnContainer):
+    """
+    Display a list of choice that are selectable
+    It is destroyed when OK or Cancel is clicked, and the callback is called with the selected object(s).
+    """
+
+    class ButtonGroup():
+        """
+        The button group governs group of selection, like a RadioGroup would do.
+        """
+
+        def __init__(self, multi_allowed=False):
+            self.object_of_group = []
+            self.button_of_group = []
+            self.multi_allowed = multi_allowed
+            return
+
+        def add_button(self, button, object_controlled):
+            self.object_of_group.append(object_controlled)
+            self.button_of_group.append(button)
+            return
+
+        def notify(self, button_notifier):
+            """
+            This function is used when one button is changed, takes care of the multi selection.
+            """
+            if not self.multi_allowed:
+                for button in self.button_of_group:
+                    if button.is_selected and button.name != button_notifier.name:
+                        button.is_selected = False
+                        button.redraw(force=True)
+            return
+
+        def get_selected_objects(self):
+            """
+            :return all the object which button has the status selected
+            """
+            objects = []
+            for index, button in enumerate(self.button_of_group):
+                if button.is_selected:
+                    objects.append(self.object_of_group[index])
+            return objects
+
+
+    def __init__(self,
+                 group_of_options,
+                 selected_option_indexes=None,
+                 multiple_selection_allowed=None,
+                 use_image=False,
+                 width=None,
+                 height=None,
+                 style=None,
+                 button_style=None,
+                 callback_ok=None,
+                 callback_cancel=None,
+                 pos=(0, 0)):
+        """
+        Initialize the popup
+        :param message: the message to be displayed, will be splitted at "\n"
+        :param style: the style for the container
+        :param button_style: the style for the button
+        :param message_h_align: alignment of the message (default: center)
+        :param callback: optional callback that will be called when the button is pressed.
+        :return:
+        """
+        if not style:
+            style = Constants.DEFAULT_CONTAINER_STYLE
+        if not button_style:
+            button_style = Constants.DEFAULT_WIDGET_STYLE
+        self.callback_ok = callback_ok
+        self.callback_cancel = callback_cancel
+
+        KenneyMultiColumnContainer.__init__(self,
+                                            style=style,
+                                            preferred_size=(width, height),
+                                            ignore_last_group_dimensions=True,
+                                            normalize_size=False,
+                                            pos=pos)
+        # the options are a list of list
+        self.button_groups = []
+        for group_index, options in enumerate(group_of_options):
+            group = KenneyPopupOption.ButtonGroup()
+            if multiple_selection_allowed and multiple_selection_allowed[group_index]:
+                group.multi_allowed = True
+            self.button_groups.append(group)
+            for option_index, option in enumerate(options):
+                selected = False
+                if selected_option_indexes and selected_option_indexes[group_index] == option_index:
+                    selected = True
+                button = KenneyWidgetOptionButton(group=group, use_image=use_image,
+                                                  style=button_style, selected=selected)
+                self.button_groups[-1].add_button(button, option)
+                self.sub(button, column_index=group_index)
+                self.sub(KenneyWidgetLabel(str(option)), stack_horizontal=True, column_index=group_index)
         width = button_style.get_font_size_for("Cancel")[0]
         self.sub(KenneyWidgetButton(self.ok, label="OK", style=button_style, width=width))
         self.sub(KenneyWidgetButton(self.cancel, label="Cancel", style=button_style, width=width),
@@ -1269,7 +1398,7 @@ class KenneyWidgetIconButton(KenneyWidget, KenneyWidgetLabel):
         # if self.clicked_counter:
         # self.clicked_counter = self.clicked_counter - 1
         # if not self.clicked_counter:
-        #         # Just turned zero, restore original background
+        # # Just turned zero, restore original background
         #         self.current_color = self.background_color
         KenneyWidgetLabel.update(self)
 
