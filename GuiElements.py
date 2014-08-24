@@ -422,11 +422,20 @@ class KenneyMultiColumnContainer(planes.gui.Container):
 
         self.draggable = True
         self.grab = False
-        self.subplanes_alignment = {}  # tuple (h_align, v_align) to remember the alignment of each.
+        self.rect.topleft = pos
+
+        # the column is one of the most important part here.
+        # It is a list of plan name (in order, top to down!).
+        self.columns = [[]]
+        # the subplane characteristics contain the data passed in the "sub" function. It is a dictionary with
+        # plan_name -> (h_plane_align, v_plane_align, fix_width, fix_height, stack_horizontal, column_id)
+        self.subplanes_characteristics = {}
 
         self.normalize_size = normalize_size  # indicate if we should normalize all widget size to the biggest
-        self.ignore_last_group_height = ignore_last_group_dimensions
-        self.rect.topleft = pos
+        # the last group of widgets (OK/Cancel) will always be in column 0. Here we highlight if we have such group
+        # present. If yes, this group will be centered cross all columns.
+        self.ignore_last_group_dimensions = ignore_last_group_dimensions
+
         return
 
     def _resize(self):
@@ -435,84 +444,106 @@ class KenneyMultiColumnContainer(planes.gui.Container):
         margin_left = self.style.margin_left  # this is the height of the bottom part
         margin_right = self.style.margin_right  # this is the height of the bottom part
 
-        group_horizontal = []
-        # First step: organize the widgets by horizontal group
-        for name in self.subplanes_list:
-            (h_plane_align, v_plane_align, fix_width, fix_height, stack_horizontal) = self.subplanes_alignment[name]
-            required_height = self.subplanes[name].rect.height
-            if fix_height:
-                required_height = fix_height
-            required_width = self.subplanes[name].rect.width
-            if fix_width:
-                required_width = fix_width
-            if not stack_horizontal:
-                group_horizontal.append([[name, required_height, required_width]])
-            else:
-                group_horizontal[-1].append([name, required_height, required_width])
-
-        line_width = []
-        line_height = []
-        for index, widget_group in enumerate(group_horizontal):
-            widget_group_width = 0
-            widget_group_max_height = 0
-            for widget in widget_group:
-                # Is this widget higher than the other in the group? If yes, this is the new reference for this line.
-                if widget_group_max_height < widget[1]:
-                    widget_group_max_height = widget[1]
-                # Width: we simply add the width
-                widget_group_width += widget[2]
-            line_width.append(widget_group_width + (len(widget_group) - 1) * self.style.padding_h)
-            line_height.append(widget_group_max_height)
-
-        max_line_width = max(line_width)
-        max_line_height_except_last = max_line_height = max(line_height)
-
-        total_width = margin_left + max_line_width + margin_right
-
-        if self.ignore_last_group_height and len(group_horizontal) > 1:
-            max_line_height_except_last = max(line_height[0:len(group_horizontal) - 1])
-
-        y_pos = margin_top
-
-        for index_group, widget_group in enumerate(group_horizontal):
-
-            x_pos = margin_left
-            required_height = 0
-
-            for index, widget in enumerate(widget_group):
-                name = widget[0]
+        list_of_group_horizontal = []
+        # First step: organize the widgets by horizontal groups. Each group is a column.
+        for index_column, column in enumerate(self.columns):
+            list_of_group_horizontal.append([])
+            for name in column:
                 (h_plane_align,
                  v_plane_align,
                  fix_width,
                  fix_height,
-                 stack_horizontal) = self.subplanes_alignment[name]
+                 stack_horizontal,
+                 column_index) = self.subplanes_characteristics[name]
+                required_height = self.subplanes[name].rect.height
+                if fix_height:
+                    required_height = fix_height
+                required_width = self.subplanes[name].rect.width
+                if fix_width:
+                    required_width = fix_width
+                if not stack_horizontal:
+                    list_of_group_horizontal[index_column].append([[name, required_height, required_width]])
+                else:
+                    list_of_group_horizontal[index_column][-1].append([name, required_height, required_width])
 
-                required_height = line_height[index_group]
-                if self.normalize_size:
-                    required_height = max_line_height
-                    if self.ignore_last_group_height and index_group != len(group_horizontal):
-                        required_height = max_line_height_except_last
+        list_of_line_width = []
+        list_of_line_height = []
+        for index_column, column in enumerate(self.columns):
+            list_of_line_width.append([])
+            list_of_line_height.append([])
+            for index, widget_group in enumerate(list_of_group_horizontal[index_column]):
+                widget_group_width = 0
+                widget_group_max_height = 0
+                for widget in widget_group:
+                    # Is this widget higher than the other in the group? If yes, this is the new reference for this line.
+                    if widget_group_max_height < widget[1]:
+                        widget_group_max_height = widget[1]
+                    # Width: we simply add the width
+                    widget_group_width += widget[2]
+                list_of_line_width[index_column].append(widget_group_width + (len(widget_group) - 1) * self.style.padding_h)
+                list_of_line_height[index_column].append(widget_group_max_height)
 
-                required_width = widget[2]
-                if index == 0:
-                    if h_plane_align == KenneyContainer.H_ALIGN_CENTER:
-                        x_pos += (max_line_width - line_width[index_group]) // 2
-                    if h_plane_align == KenneyContainer.H_ALIGN_RIGHT:
-                        x_pos += max_line_width - line_width[index_group]
+        max_line_width_list = []
+        for list_line_width in list_of_line_width:
+            max_line_width_list.append(max(list_line_width))
 
-                if v_plane_align == KenneyContainer.V_ALIGN_MIDDLE:
-                    self.subplanes[name].rect.centery = y_pos + int(required_height / 2)
-                elif v_plane_align == KenneyContainer.V_ALIGN_TOP:
-                    self.subplanes[name].rect.top = y_pos
-                elif v_plane_align == KenneyContainer.V_ALIGN_BOTTOM:
-                    self.subplanes[name].rect.bottom = y_pos + required_height
+        total_width = margin_left + sum(max_line_width_list) + \
+                      2 * self.style.padding_h * (len(max_line_width_list) - 1) + \
+                      margin_right
 
-                self.subplanes[name].rect.left = x_pos
-                x_pos += (required_width + self.style.padding_h)
+        max_line_height_list = []
+        for list_line_height in list_of_line_height:
+            max_line_height_list.append(max(list_line_height))
 
-            y_pos += (required_height + self.style.padding_v)
+        max_line_height_except_last = 0
+        if self.ignore_last_group_dimensions and len(list_of_group_horizontal[0]) > 1:
+            max_line_height_except_last = max(list_of_line_height[0][0:len(list_of_group_horizontal) - 1])
 
-        self.rect.height = max(self.preferred_size[1], y_pos + margin_bottom - self.style.padding_v)
+        y_pos_list = []
+
+        for index_column, column in enumerate(self.columns):
+            y_pos = margin_top
+
+            for index_group, widget_group in enumerate(list_of_group_horizontal[index_column]):
+
+                x_pos = margin_left
+                required_height = 0
+
+                for index, widget in enumerate(widget_group):
+                    name = widget[0]
+                    (h_plane_align,
+                     v_plane_align,
+                     fix_width,
+                     fix_height,
+                     stack_horizontal) = self.subplanes_characteristics[name]
+
+                    required_height = list_of_line_height[index_column][index_group]
+                    if self.normalize_size:
+                        required_height = max_line_height_list[column_index]
+                        if column_index == 0 and self.ignore_last_group_dimensions and index_group != len(list_of_group_horizontal):
+                            required_height = max_line_height_except_last
+
+                    required_width = widget[2]
+                    if index == 0:
+                        if h_plane_align == KenneyContainer.H_ALIGN_CENTER:
+                            x_pos += (max_line_width_list[column_index] - list_of_line_width[index_group]) // 2
+                        if h_plane_align == KenneyContainer.H_ALIGN_RIGHT:
+                            x_pos += max_line_width_list[column_index] - list_of_line_width[index_group]
+
+                    if v_plane_align == KenneyContainer.V_ALIGN_MIDDLE:
+                        self.subplanes[name].rect.centery = y_pos + int(required_height / 2)
+                    elif v_plane_align == KenneyContainer.V_ALIGN_TOP:
+                        self.subplanes[name].rect.top = y_pos
+                    elif v_plane_align == KenneyContainer.V_ALIGN_BOTTOM:
+                        self.subplanes[name].rect.bottom = y_pos + required_height
+
+                    self.subplanes[name].rect.left = x_pos
+                    x_pos += (required_width + self.style.padding_h)
+
+                y_pos += (required_height + self.style.padding_v)
+            y_pos_list.append(y_pos)
+
+        self.rect.height = max(self.preferred_size[1], max(y_pos_list) + margin_bottom - self.style.padding_v)
         self.rect.width = max(self.preferred_size[0], total_width)
 
     def render_background(self):
@@ -530,7 +561,7 @@ class KenneyMultiColumnContainer(planes.gui.Container):
                 group_horizontal = []
                 # First step: organize the widgets by horizontal group
                 for name in self.subplanes_list:
-                    (h_plane_align, v_plane_align, fix_width, fix_height, stack_horizontal) = self.subplanes_alignment[
+                    (h_plane_align, v_plane_align, fix_width, fix_height, stack_horizontal, column_index) = self.subplanes_characteristics[
                         name]
                     required_height = self.subplanes[name].rect.height
                     if fix_height:
@@ -563,6 +594,7 @@ class KenneyMultiColumnContainer(planes.gui.Container):
 
     def sub(self,
             plane,
+            column_index=0,
             h_align=H_ALIGN_CENTER,
             v_align=V_ALIGN_MIDDLE,
             fix_width=None,
@@ -578,7 +610,16 @@ class KenneyMultiColumnContainer(planes.gui.Container):
         # First add the subplane by calling the base class method.
         # This also cares for re-adding an already existing subplane.
         planes.Plane.sub(self, plane)
-        self.subplanes_alignment[plane.name] = (h_align, v_align, fix_width, fix_height, stack_horizontal)
+        # Now, takes care of putting the container in the correct column.
+        while len(self.subplanes_list) < column_index:
+            self.subplanes_list.append([])
+        self.subplanes_list[column_index].append(plane.name)
+        self.subplanes_characteristics[plane.name] = (h_align,
+                                                      v_align,
+                                                      fix_width,
+                                                      fix_height,
+                                                      stack_horizontal,
+                                                      column_index)
 
         # Resize and recreate background
         self._resize()
